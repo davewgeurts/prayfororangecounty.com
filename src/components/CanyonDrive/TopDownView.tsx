@@ -2,6 +2,15 @@ import React, { useRef, useEffect } from 'react'
 import { CanyonRoute } from '../../utils/canyonRoute'
 import type { PlayerCarState } from '../../types/game'
 import { SNOWBOARDS_LIST, RIDERS_LIST } from '../../data/snowboardGear'
+import {
+  drawGpuOceanCausticsAndSunbeams,
+  drawCelShadedPalmTree,
+  drawCelShadedUmbrellaAndSunbather,
+  drawCelShadedLifeguardTower,
+  drawCelShadedDolphin,
+  drawCelShadedSeaTurtle,
+  drawCelShadedPelican
+} from '../../utils/oceanShaderEngine'
 
 interface Props {
   carState: PlayerCarState;
@@ -40,10 +49,16 @@ export const TopDownView: React.FC<Props> = ({ carState }) => {
     const render = () => {
       const width = canvas.width
       const height = canvas.height
+      const timeSec = Date.now() * 0.001
 
-      // Base deep ocean/coastal background
-      ctx.fillStyle = '#0369a1'
+      // Base multi-stop deep Pacific Ocean gradient + WebGPU/GLSL Caustics & Sunbeams
+      const baseOcean = ctx.createLinearGradient(0, 0, width, height)
+      baseOcean.addColorStop(0, '#082f49')
+      baseOcean.addColorStop(0.5, '#0369a1')
+      baseOcean.addColorStop(1, '#0891b2')
+      ctx.fillStyle = baseOcean
       ctx.fillRect(0, 0, width, height)
+      drawGpuOceanCausticsAndSunbeams(ctx, 0, 0, width, height, timeSec)
 
       ctx.save()
 
@@ -349,60 +364,11 @@ export const TopDownView: React.FC<Props> = ({ carState }) => {
 }
 
 function drawPalmTree(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number) {
-  ctx.save()
-  ctx.translate(x, y)
-  // Shadow
-  ctx.beginPath()
-  ctx.arc(3, 3, radius * 0.85, 0, Math.PI * 2)
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.25)'
-  ctx.fill()
-
-  // Star-shaped palm fronds
-  ctx.fillStyle = '#15803d'
-  for (let i = 0; i < 6; i++) {
-    ctx.save()
-    ctx.rotate((i * Math.PI) / 3)
-    ctx.beginPath()
-    ctx.ellipse(radius * 0.55, 0, radius * 0.6, radius * 0.22, 0, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.restore()
-  }
-
-  // Coconut center crown
-  ctx.beginPath()
-  ctx.arc(0, 0, radius * 0.28, 0, Math.PI * 2)
-  ctx.fillStyle = '#78350f'
-  ctx.fill()
-  ctx.restore()
+  drawCelShadedPalmTree(ctx, x, y, radius, Date.now() * 0.001)
 }
 
 function drawBeachUmbrellaAndSunbather(ctx: CanvasRenderingContext2D, x: number, y: number, seed: number) {
-  ctx.save()
-  ctx.translate(x, y)
-
-  // Beach Towel
-  const towelColors = ['#38bdf8', '#f43f5e', '#10b981', '#a855f7', '#f59e0b']
-  ctx.fillStyle = towelColors[seed % towelColors.length]
-  ctx.fillRect(-6, -12, 12, 22)
-
-  // Sunbather lying on towel
-  ctx.fillStyle = '#d97706'
-  ctx.beginPath()
-  ctx.arc(0, -6, 3, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.fillRect(-2.5, -2, 5, 9)
-
-  // Beach Umbrella next to towel
-  const umbrellaColors = ['#ef4444', '#06b6d4', '#facc15', '#ec4899']
-  ctx.beginPath()
-  ctx.arc(10, -4, 9, 0, Math.PI * 2)
-  ctx.fillStyle = umbrellaColors[(seed + 1) % umbrellaColors.length]
-  ctx.fill()
-  ctx.strokeStyle = '#ffffff'
-  ctx.lineWidth = 1.5
-  ctx.stroke()
-
-  ctx.restore()
+  drawCelShadedUmbrellaAndSunbather(ctx, x, y, seed)
 }
 
 function drawKidsAndSeashells(ctx: CanvasRenderingContext2D, x: number, y: number, seed: number) {
@@ -416,38 +382,16 @@ function drawKidsAndSeashells(ctx: CanvasRenderingContext2D, x: number, y: numbe
 }
 
 function drawLifeguardTower(ctx: CanvasRenderingContext2D, x: number, y: number) {
-  ctx.save()
-  ctx.translate(x, y)
-
-  // Classic California Blue/White Lifeguard Tower with Red Rescue Tube
-  ctx.fillStyle = '#e0f2fe'
-  ctx.fillRect(-12, -12, 24, 24)
-  ctx.strokeStyle = '#0284c7'
-  ctx.lineWidth = 2
-  ctx.strokeRect(-12, -12, 24, 24)
-
-  // Red cross / rescue buoy
-  ctx.fillStyle = '#ef4444'
-  ctx.fillRect(-8, -3, 16, 6)
-  ctx.fillRect(-3, -8, 6, 16)
-
-  ctx.fillStyle = '#0f172a'
-  ctx.font = 'bold 7px monospace'
-  ctx.textAlign = 'center'
-  ctx.fillText('LIFEGUARD', 0, 20)
-
-  ctx.restore()
+  drawCelShadedLifeguardTower(ctx, x, y)
 }
 
 function drawOceanWildlifeAndSurfers(ctx: CanvasRenderingContext2D, x: number, y: number, seed: number) {
-  ctx.save()
-  ctx.translate(x, y)
-  const bob = Math.sin(Date.now() * 0.004 + seed) * 4
-  ctx.font = '15px sans-serif'
-  ctx.textAlign = 'center'
-  const icons = ['🐬', '🐢', '🏄', '🐬', '🐢']
-  ctx.fillText(icons[seed % icons.length], 0, bob)
-  ctx.restore()
+  const timeSec = Date.now() * 0.001
+  if (seed % 2 === 0) {
+    drawCelShadedDolphin(ctx, x, y, timeSec, seed)
+  } else {
+    drawCelShadedSeaTurtle(ctx, x, y, timeSec, seed)
+  }
 }
 
 function drawSurfAndPaddleAndTacoStandLot(ctx: CanvasRenderingContext2D, x: number, y: number) {
@@ -674,8 +618,8 @@ function drawCar(ctx: CanvasRenderingContext2D, x: number, y: number, car: Playe
   // 1. Headlight beams
   if (car.headlights) {
     const beamGrad = ctx.createRadialGradient(0, -30, 10, 0, -200, 120)
-    beamGrad.addColorStop(0, 'rgba(254, 240, 138, 0.35)')
-    beamGrad.addColorStop(0.5, 'rgba(254, 240, 138, 0.14)')
+    beamGrad.addColorStop(0, 'rgba(254, 240, 138, 0.42)')
+    beamGrad.addColorStop(0.5, 'rgba(254, 240, 138, 0.16)')
     beamGrad.addColorStop(1, 'rgba(254, 240, 138, 0)')
 
     ctx.beginPath()
@@ -688,49 +632,74 @@ function drawCar(ctx: CanvasRenderingContext2D, x: number, y: number, car: Playe
     ctx.fill()
   }
 
-  // 2. Car shadow
+  // 2. Soft Ground Drop Shadow
   ctx.beginPath()
-  ctx.roundRect(-22, -38, 44, 76, 8)
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.45)'
+  ctx.roundRect(-24, -39, 48, 80, 9)
+  ctx.fillStyle = 'rgba(2, 6, 23, 0.5)'
   ctx.fill()
 
-  // 3. PCH Surf Wagon Body (Pacific Ocean Blue with Woody side trim)
+  // 3. Cel-Shaded PCH Woody Surf Wagon Body (Metallic Pacific Blue + Teak Wood Side Trim)
+  const bodyGrad = ctx.createLinearGradient(-20, -36, 20, 36)
+  bodyGrad.addColorStop(0, '#38bdf8')
+  bodyGrad.addColorStop(0.45, '#0284c7')
+  bodyGrad.addColorStop(1, '#0369a1')
+
   ctx.beginPath()
-  ctx.roundRect(-20, -36, 40, 72, 7)
-  ctx.fillStyle = '#0284c7'
+  ctx.roundRect(-20, -36, 40, 72, 8)
+  ctx.fillStyle = bodyGrad
   ctx.fill()
-  ctx.lineWidth = 1.5
-  ctx.strokeStyle = '#fde047'
+  ctx.lineWidth = 2.2
+  ctx.strokeStyle = '#020617'
   ctx.stroke()
 
-  // 4. Roof Surf Rack with Player's Surfboard/Boogie Board & Pro Surfer's Board!
+  // Classic California "Woody" Teak Side Trim Panels
+  ctx.fillStyle = '#b45309'
+  ctx.fillRect(-20, -16, 3.5, 42)
+  ctx.fillRect(16.5, -16, 3.5, 42)
+
+  // Specular Hood Highlight
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.25)'
+  ctx.beginPath()
+  ctx.roundRect(-14, -33, 12, 9, 3)
+  ctx.fill()
+
+  // 4. Windshield & Rear Glass with Diagonal Sky Reflection
   ctx.fillStyle = '#0f172a'
-  ctx.fillRect(-18, -18, 36, 4)
-  ctx.fillRect(-18, 12, 36, 4)
+  ctx.beginPath()
+  ctx.roundRect(-16, -24, 32, 11, 3)
+  ctx.roundRect(-15, 19, 30, 9, 3)
+  ctx.fill()
+
+  ctx.strokeStyle = 'rgba(186, 230, 253, 0.65)'
+  ctx.lineWidth = 1.5
+  ctx.beginPath()
+  ctx.moveTo(-12, -16)
+  ctx.lineTo(-4, -22)
+  ctx.stroke()
+
+  // 5. Roof Surf Rack with Player's Surfboard/Boogie Board & Pro Surfer's Board!
+  ctx.fillStyle = '#020617'
+  ctx.fillRect(-18, -14, 36, 3.5)
+  ctx.fillRect(-18, 12, 36, 3.5)
 
   const activeBoard = SNOWBOARDS_LIST.find(b => b.id === car.selectedBoardId) || SNOWBOARDS_LIST[0]
   const activeRider = RIDERS_LIST.find(r => r.id === car.selectedRiderId) || RIDERS_LIST[0]
   const riderBoard = SNOWBOARDS_LIST.find(b => b.id === activeRider.defaultBoardId) || SNOWBOARDS_LIST[1]
 
   // Player's board (driver side)
-  drawRoofCraft(ctx, -10, 0, activeBoard.accentColor, activeBoard.craftType === 'boogie')
+  drawRoofCraft(ctx, -9.5, 0, activeBoard.accentColor, activeBoard.craftType === 'boogie')
 
   // Shotgun Pro's board (passenger side)
-  drawRoofCraft(ctx, 10, 0, riderBoard.accentColor, riderBoard.craftType === 'boogie')
-
-  // 5. Windshield & rear glass
-  ctx.fillStyle = '#1e293b'
-  ctx.fillRect(-15, -24, 30, 10)
-  ctx.fillRect(-14, 20, 28, 8)
+  drawRoofCraft(ctx, 9.5, 0, riderBoard.accentColor, riderBoard.craftType === 'boogie')
 
   // 6. Headlights & Taillights
   ctx.fillStyle = '#fef08a'
-  ctx.fillRect(-18, -37, 8, 4)
-  ctx.fillRect(10, -37, 8, 4)
+  ctx.fillRect(-17, -37, 8, 4)
+  ctx.fillRect(9, -37, 8, 4)
 
   ctx.fillStyle = '#ef4444'
-  ctx.fillRect(-18, 33, 8, 4)
-  ctx.fillRect(10, 33, 8, 4)
+  ctx.fillRect(-17, 33, 8, 4)
+  ctx.fillRect(9, 33, 8, 4)
 
   ctx.restore()
 }
@@ -740,18 +709,16 @@ function drawRoofCraft(ctx: CanvasRenderingContext2D, x: number, y: number, colo
   ctx.translate(x, y)
 
   if (isBoogie) {
-    // Boogie board / Bodyboard shape (shorter, wider, squared nose & crescent tail)
     ctx.beginPath()
     ctx.roundRect(-6.5, -20, 13, 40, 3)
     ctx.fillStyle = color
     ctx.fill()
     ctx.strokeStyle = '#020617'
-    ctx.lineWidth = 1
+    ctx.lineWidth = 1.4
     ctx.stroke()
   } else {
-    // Surfboard shape (pointed nose, center stringer line, squash/swallow tail)
     ctx.beginPath()
-    ctx.moveTo(0, -34) // pointed surfboard nose
+    ctx.moveTo(0, -34)
     ctx.quadraticCurveTo(7, -16, 6, 28)
     ctx.lineTo(-6, 28)
     ctx.quadraticCurveTo(-7, -16, 0, -34)
@@ -759,10 +726,9 @@ function drawRoofCraft(ctx: CanvasRenderingContext2D, x: number, y: number, colo
     ctx.fillStyle = color
     ctx.fill()
     ctx.strokeStyle = '#020617'
-    ctx.lineWidth = 1
+    ctx.lineWidth = 1.4
     ctx.stroke()
 
-    // Cedar center stringer line
     ctx.strokeStyle = 'rgba(120, 53, 15, 0.7)'
     ctx.lineWidth = 1
     ctx.beginPath()
@@ -778,17 +744,19 @@ function drawParkedCar(ctx: CanvasRenderingContext2D, x: number, y: number, colo
   ctx.save()
   ctx.translate(x, y)
   ctx.fillStyle = color
+  ctx.strokeStyle = '#020617'
+  ctx.lineWidth = 1.5
   ctx.beginPath()
   ctx.roundRect(-10, -18, 20, 36, 4)
   ctx.fill()
-  ctx.fillStyle = '#020617'
+  ctx.stroke()
+  ctx.fillStyle = '#0f172a'
   ctx.fillRect(-8, -8, 16, 14)
   ctx.restore()
 }
 
 function renderSeagulls(ctx: CanvasRenderingContext2D, width: number, height: number, birds: SeaBird[]) {
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)'
-  ctx.lineWidth = 2
+  const timeSec = Date.now() * 0.001
 
   for (let i = 0; i < birds.length; i++) {
     const b = birds[i]
@@ -803,12 +771,18 @@ function renderSeagulls(ctx: CanvasRenderingContext2D, width: number, height: nu
     if (b.x < -20) b.x = width + 15
     if (b.x > width + 20) b.x = -15
 
-    const flap = Math.sin(b.wingPhase) * 4
-    ctx.beginPath()
-    ctx.moveTo(b.x - 7, b.y + flap)
-    ctx.quadraticCurveTo(b.x - 3, b.y - 3, b.x, b.y)
-    ctx.quadraticCurveTo(b.x + 3, b.y - 3, b.x + 7, b.y + flap)
-    ctx.stroke()
+    if (i % 3 === 0) {
+      drawCelShadedPelican(ctx, b.x, b.y, timeSec, i)
+    } else {
+      const flap = Math.sin(b.wingPhase) * 4
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)'
+      ctx.lineWidth = 2.2
+      ctx.beginPath()
+      ctx.moveTo(b.x - 7, b.y + flap)
+      ctx.quadraticCurveTo(b.x - 3, b.y - 3, b.x, b.y)
+      ctx.quadraticCurveTo(b.x + 3, b.y - 3, b.x + 7, b.y + flap)
+      ctx.stroke()
+    }
   }
 }
 

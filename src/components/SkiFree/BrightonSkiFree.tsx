@@ -4,6 +4,16 @@ import { SNOWBOARDS_LIST, RIDERS_LIST, type Snowboard, type RiderPro } from '../
 import { SURF_SPOTS, type SurfSpotId } from '../../types/game'
 import { ChairliftRideView } from './ChairliftRideView'
 import { useOceanBuoyFeed } from '../../utils/oceanBuoyFeed'
+import {
+  drawGpuOceanCausticsAndSunbeams,
+  getShaderBackendLabel,
+  drawFoamLaceStrip,
+  drawCelShadedDolphin,
+  drawCelShadedSeaTurtle,
+  drawCelShadedPelican,
+  drawCelShadedLifeguardTower,
+  drawCelShadedUmbrellaAndSunbather
+} from '../../utils/oceanShaderEngine'
 import confetti from 'canvas-confetti'
 
 interface Props {
@@ -237,24 +247,42 @@ export const BrightonSkiFree: React.FC<Props> = ({
       const skier = skierRef.current
       const yeti = yetiRef.current
 
-      // 1. TURQUOISE PACIFIC OCEAN SWELL CANVAS
-      const oceanGrad = ctx.createLinearGradient(0, 0, width - 140, 0)
-      oceanGrad.addColorStop(0, '#0369a1')
-      oceanGrad.addColorStop(0.5, '#0891b2')
-      oceanGrad.addColorStop(0.85, '#06b6d4')
+      const timeSec = Date.now() * 0.001
+
+      // 1. MULTI-STOP DEEP PACIFIC TO TURQUOISE REEF OCEAN GRADIENT
+      const oceanGrad = ctx.createLinearGradient(0, 0, width - 135, 0)
+      oceanGrad.addColorStop(0, '#082f49')
+      oceanGrad.addColorStop(0.28, '#0369a1')
+      oceanGrad.addColorStop(0.62, '#0891b2')
+      oceanGrad.addColorStop(0.88, '#06b6d4')
       oceanGrad.addColorStop(1, '#67e8f9')
       ctx.fillStyle = oceanGrad
       ctx.fillRect(0, 0, width, height)
 
-      // Animated scrolling A-Frame & Peeling Swell Lines across the ocean
+      // Real-time GPU GLSL Voronoi Ocean Caustics & Golden-Hour Sunbeams
+      drawGpuOceanCausticsAndSunbeams(ctx, 0, 0, width - 135, height, timeSec)
+
+      // Animated Cel-Shaded A-Frame & Peeling Swell Lines with Subsurface Glow & Lacy Foam
       const swellOffset = (distCounter * 2.2) % 140
       for (let sy = -80 + swellOffset; sy < height + 80; sy += 140) {
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.24)'
-        ctx.lineWidth = 5
+        // Dark trough shadow band
+        ctx.strokeStyle = 'rgba(8, 47, 73, 0.35)'
+        ctx.lineWidth = 12
+        ctx.beginPath()
+        ctx.moveTo(0, sy + 6)
+        ctx.quadraticCurveTo(width * 0.42, sy - 16, width - 135, sy + 14)
+        ctx.stroke()
+
+        // Subsurface turquoise glow band
+        ctx.strokeStyle = 'rgba(103, 232, 249, 0.45)'
+        ctx.lineWidth = 7
         ctx.beginPath()
         ctx.moveTo(0, sy)
         ctx.quadraticCurveTo(width * 0.42, sy - 22, width - 135, sy + 8)
         ctx.stroke()
+
+        // Lacy whitewater crest
+        drawFoamLaceStrip(ctx, 0, sy - 4, width - 135, sy + 4, timeSec + sy * 0.01)
       }
 
       // Handle Surfer / Boogie Boarder input
@@ -580,17 +608,23 @@ export const BrightonSkiFree: React.FC<Props> = ({
           </div>
         </div>
 
-        {/* SECOND TELEMETRY BAR: Live NOAA Buoy + Green Room Tube Meter + OC Local Respect Meter */}
+        {/* SECOND TELEMETRY BAR: Live NOAA Buoy + Shader Engine + Green Room Tube Meter + OC Local Respect Meter */}
         <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono pointer-events-auto">
-          <div className="px-3 py-1 rounded-lg bg-slate-950/85 border border-cyan-500/40 text-cyan-200 flex items-center gap-2">
-            <span className="text-cyan-400 font-bold">🌊 {buoy.stationId}:</span>
-            <span>
-              {buoy.waveHeightFt}–{buoy.waveMaxFt}ft @ {buoy.swellPeriodSec}s {buoy.swellCompass}
-            </span>
-            <span className="hidden md:inline">&bull; {buoy.waterTempF}°F &bull; Tide {buoy.tideStage}</span>
-            <span className="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-bold">
-              {buoy.surfRating}
-            </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="px-3 py-1 rounded-lg bg-slate-950/85 border border-cyan-500/40 text-cyan-200 flex items-center gap-2">
+              <span className="text-cyan-400 font-bold">🌊 {buoy.stationId}:</span>
+              <span>
+                {buoy.waveHeightFt}–{buoy.waveMaxFt}ft @ {buoy.swellPeriodSec}s {buoy.swellCompass}
+              </span>
+              <span className="hidden md:inline">&bull; {buoy.waterTempF}°F &bull; Tide {buoy.tideStage}</span>
+              <span className="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-bold">
+                {buoy.surfRating}
+              </span>
+            </div>
+            <div className="hidden lg:flex px-2.5 py-1 rounded-lg bg-indigo-950/85 border border-indigo-400/50 text-indigo-200 items-center gap-1.5">
+              <Sparkles className="w-3 h-3 text-amber-300" />
+              <span>{getShaderBackendLabel()}</span>
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
@@ -701,32 +735,71 @@ function drawOceanObstacle(
   spotId: SurfSpotId,
   localRespect: number
 ) {
+  const timeSec = Date.now() * 0.001
+
+  if (obs.type === 'dolphin') {
+    drawCelShadedDolphin(ctx, obs.x, obs.y, timeSec, obs.x * 0.05)
+    return
+  }
+  if (obs.type === 'sea_turtle') {
+    drawCelShadedSeaTurtle(ctx, obs.x, obs.y, timeSec, obs.x * 0.05)
+    return
+  }
+  if (obs.type === 'pelican_flock') {
+    drawCelShadedPelican(ctx, obs.x - 10, obs.y, timeSec, 0)
+    drawCelShadedPelican(ctx, obs.x + 12, obs.y - 7, timeSec, 1.4)
+    return
+  }
+
   ctx.save()
   ctx.translate(obs.x, obs.y)
 
   if (obs.type === 'local_surfer') {
     const isFriendly = localRespect >= 80
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'
-    ctx.beginPath()
-    ctx.ellipse(0, 6, 15, 5, 0, 0, Math.PI * 2)
-    ctx.fill()
 
-    // Local's surfboard
-    ctx.fillStyle = isFriendly ? '#10b981' : '#f43f5e'
+    // Foaming Wake Ring with Cel Outline
+    ctx.fillStyle = 'rgba(236, 254, 255, 0.72)'
     ctx.beginPath()
-    ctx.ellipse(0, 4, 14, 4.5, 0, 0, Math.PI * 2)
+    ctx.ellipse(0, 7, 17, 6, 0, 0, Math.PI * 2)
     ctx.fill()
+    ctx.strokeStyle = '#0891b2'
+    ctx.lineWidth = 1.4
+    ctx.stroke()
 
-    // Local in wetsuit
+    // Cel-Shaded Local Surfboard with Gradient & Stringer
+    const bGrad = ctx.createLinearGradient(-15, 0, 15, 8)
+    bGrad.addColorStop(0, isFriendly ? '#34d399' : '#fb7185')
+    bGrad.addColorStop(1, isFriendly ? '#059669' : '#e11d48')
+    ctx.fillStyle = bGrad
+    ctx.beginPath()
+    ctx.ellipse(0, 4, 15, 5, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.strokeStyle = '#020617'
+    ctx.lineWidth = 1.6
+    ctx.stroke()
+
+    // Local Surfer Wetsuit & Sunlit Hair
     ctx.fillStyle = '#0f172a'
     ctx.beginPath()
-    ctx.arc(0, -4, 6, 0, Math.PI * 2)
+    ctx.arc(0, -4, 6.2, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.stroke()
+
+    ctx.fillStyle = '#fde047'
+    ctx.beginPath()
+    ctx.arc(-1.5, -6.5, 2.5, 0, Math.PI * 2)
     ctx.fill()
 
-    // Speech bubble / Priority badge
-    ctx.fillStyle = isFriendly ? 'rgba(6, 78, 59, 0.92)' : 'rgba(127, 29, 29, 0.92)'
-    ctx.fillRect(-44, -24, 88, 13)
-    ctx.fillStyle = isFriendly ? '#6ee7b7' : '#fca5a5'
+    // Cel-Shaded Speech Bubble / Priority Badge
+    ctx.fillStyle = isFriendly ? 'rgba(6, 78, 59, 0.95)' : 'rgba(127, 29, 29, 0.95)'
+    ctx.beginPath()
+    ctx.roundRect(-46, -26, 92, 14, 4)
+    ctx.fill()
+    ctx.strokeStyle = isFriendly ? '#34d399' : '#f87171'
+    ctx.lineWidth = 1.4
+    ctx.stroke()
+
+    ctx.fillStyle = isFriendly ? '#a7f3d0' : '#fecaca'
     ctx.font = 'bold 7px monospace'
     ctx.textAlign = 'center'
     ctx.fillText(
@@ -734,105 +807,140 @@ function drawOceanObstacle(
         ? '🤙 GO! YOUR WAVE!'
         : obs.localQuote || (spotId === 'trestles_wsl' ? 'WSL PRIORITY' : 'LOCAL!'),
       0,
-      -15
+      -16.5
     )
   } else if (obs.type === 'peeling_wall') {
-    // Lateral Peeling Left/Right Wave Wall with Green Room Curtain!
+    // Cel-Shaded Lateral Peeling A-Frame Wave Wall with Subsurface Glow & Curling Lip
     const isRight = obs.peelDirection !== 'left'
+
+    // Deep trough drop shadow
+    ctx.fillStyle = 'rgba(8, 47, 73, 0.45)'
+    ctx.beginPath()
+    ctx.roundRect(-56, -11, 114, 30, 12)
+    ctx.fill()
+
     const wallGrad = ctx.createLinearGradient(-55, -16, 55, 16)
-    wallGrad.addColorStop(0, isRight ? '#ecfeff' : '#0284c7')
-    wallGrad.addColorStop(0.5, '#06b6d4')
-    wallGrad.addColorStop(1, isRight ? '#0284c7' : '#ecfeff')
+    wallGrad.addColorStop(0, isRight ? '#ecfeff' : '#0369a1')
+    wallGrad.addColorStop(0.45, '#22d3ee')
+    wallGrad.addColorStop(0.8, '#0891b2')
+    wallGrad.addColorStop(1, isRight ? '#0369a1' : '#ecfeff')
 
     ctx.fillStyle = wallGrad
     ctx.beginPath()
-    ctx.roundRect(-55, -14, 110, 28, 10)
+    ctx.roundRect(-55, -15, 110, 29, 11)
     ctx.fill()
-
-    // Foaming Curling Lip Crest
-    ctx.strokeStyle = '#ffffff'
-    ctx.lineWidth = 4
-    ctx.beginPath()
-    ctx.moveTo(-52, -12)
-    ctx.lineTo(52, -12)
+    ctx.strokeStyle = '#083344'
+    ctx.lineWidth = 2
     ctx.stroke()
 
-    ctx.fillStyle = '#083344'
+    // Specular Toon Rib Lines Inside the Wave Face
+    ctx.strokeStyle = 'rgba(236, 254, 255, 0.48)'
+    ctx.lineWidth = 1.5
+    for (let rx = -38; rx <= 38; rx += 19) {
+      ctx.beginPath()
+      ctx.moveTo(rx, -11)
+      ctx.quadraticCurveTo(rx + (isRight ? 6 : -6), 0, rx, 11)
+      ctx.stroke()
+    }
+
+    // Foaming Curling Lip Crest
+    drawFoamLaceStrip(ctx, -52, -13, 52, -13, timeSec)
+
+    ctx.fillStyle = '#082f49'
     ctx.font = 'bold 8px monospace'
     ctx.textAlign = 'center'
-    ctx.fillText(isRight ? 'PEELING RIGHT WALL 🌊→' : '←🌊 PEELING LEFT WALL', 0, 4)
+    ctx.fillText(isRight ? 'PEELING RIGHT WALL 🌊→' : '←🌊 PEELING LEFT WALL', 0, 5)
   } else if (obs.type === 'kelp_rock') {
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.65)'
+    // Swirling Foam Ring + Cel-Shaded Reef Rock & Kelp Fronds
+    ctx.fillStyle = 'rgba(236, 254, 255, 0.75)'
     ctx.beginPath()
-    ctx.arc(0, 0, 14, 0, Math.PI * 2)
+    ctx.ellipse(0, 2, 16, 12, 0, 0, Math.PI * 2)
     ctx.fill()
 
-    ctx.fillStyle = spotId === 'san_clemente_pier' ? '#78350f' : '#365314'
+    const rockGrad = ctx.createRadialGradient(-3, -4, 1, 0, 0, 11)
+    rockGrad.addColorStop(0, spotId === 'san_clemente_pier' ? '#b45309' : '#65a30d')
+    rockGrad.addColorStop(1, spotId === 'san_clemente_pier' ? '#451a03' : '#1a2e05')
+    ctx.fillStyle = rockGrad
+    ctx.strokeStyle = '#020617'
+    ctx.lineWidth = 1.8
     ctx.beginPath()
-    ctx.arc(0, 0, 9, 0, Math.PI * 2)
+    ctx.moveTo(-10, 4)
+    ctx.quadraticCurveTo(-8, -9, 0, -10)
+    ctx.quadraticCurveTo(9, -8, 10, 4)
+    ctx.closePath()
     ctx.fill()
+    ctx.stroke()
   } else if (obs.type === 'wave_lip') {
-    ctx.fillStyle = '#0284c7'
+    // Cel-Shaded Closeout Ramp Lip
+    const lipGrad = ctx.createLinearGradient(0, -10, 0, 10)
+    lipGrad.addColorStop(0, '#ecfeff')
+    lipGrad.addColorStop(0.4, '#22d3ee')
+    lipGrad.addColorStop(1, '#0284c7')
+    ctx.fillStyle = lipGrad
+    ctx.strokeStyle = '#082f49'
+    ctx.lineWidth = 2
     ctx.beginPath()
-    ctx.roundRect(-22, -8, 44, 16, 6)
+    ctx.roundRect(-24, -10, 48, 20, 7)
     ctx.fill()
+    ctx.stroke()
 
-    ctx.fillStyle = '#ffffff'
-    ctx.fillRect(-20, -8, 40, 5)
+    drawFoamLaceStrip(ctx, -20, -9, 20, -9, timeSec)
 
-    ctx.fillStyle = '#fef08a'
-    ctx.font = 'bold 7px monospace'
+    ctx.fillStyle = '#082f49'
+    ctx.font = 'bold 7.5px monospace'
     ctx.textAlign = 'center'
-    ctx.fillText('AIR LIP 🚀', 0, 5)
+    ctx.fillText('AIR LIP 🚀', 0, 6)
   } else if (obs.type === 'barrel_tube') {
-    const tubeGrad = ctx.createLinearGradient(-28, -14, 28, 14)
-    tubeGrad.addColorStop(0, '#0891b2')
-    tubeGrad.addColorStop(0.5, '#22d3ee')
+    // Cel-Shaded Hollow Curling Green Room Vortex
+    const tubeGrad = ctx.createRadialGradient(-4, -2, 3, 0, 2, 26)
+    tubeGrad.addColorStop(0, '#082f49')
+    tubeGrad.addColorStop(0.45, '#0891b2')
+    tubeGrad.addColorStop(0.8, '#22d3ee')
     tubeGrad.addColorStop(1, '#ecfeff')
     ctx.fillStyle = tubeGrad
     ctx.beginPath()
-    ctx.arc(0, 4, 24, Math.PI, 0)
+    ctx.arc(0, 5, 25, Math.PI, 0)
+    ctx.closePath()
     ctx.fill()
-
-    ctx.strokeStyle = '#ffffff'
-    ctx.lineWidth = 4
-    ctx.beginPath()
-    ctx.arc(0, 4, 24, Math.PI, 0)
+    ctx.strokeStyle = '#082f49'
+    ctx.lineWidth = 2
     ctx.stroke()
 
-    ctx.fillStyle = '#083344'
+    // Thick Whitewater Throwing Lip
+    ctx.strokeStyle = '#ffffff'
+    ctx.lineWidth = 4.5
+    ctx.beginPath()
+    ctx.arc(0, 5, 25, Math.PI * 1.05, Math.PI * 1.95)
+    ctx.stroke()
+
+    ctx.fillStyle = '#fef08a'
     ctx.font = 'bold 8px monospace'
     ctx.textAlign = 'center'
     ctx.fillText('TUBE 🌊', 0, 2)
-  } else if (obs.type === 'dolphin') {
-    ctx.fillStyle = 'rgba(186, 230, 253, 0.6)'
-    ctx.beginPath()
-    ctx.arc(0, 2, 14, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.font = '20px sans-serif'
-    ctx.textAlign = 'center'
-    ctx.fillText('🐬', 0, 6)
-  } else if (obs.type === 'sea_turtle') {
-    ctx.fillStyle = 'rgba(167, 243, 208, 0.55)'
-    ctx.beginPath()
-    ctx.arc(0, 2, 13, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.font = '19px sans-serif'
-    ctx.textAlign = 'center'
-    ctx.fillText('🐢', 0, 6)
-  } else if (obs.type === 'pelican_flock') {
-    ctx.font = '18px sans-serif'
-    ctx.textAlign = 'center'
-    ctx.fillText('🐦', -8, 0)
-    ctx.fillText('🐦', 10, -6)
   } else if (obs.type === 'seashell_reef') {
-    ctx.fillStyle = 'rgba(254, 240, 138, 0.75)'
+    // Golden Shimmering Scallop Seashell with Cel-Shaded Ribs
+    const glow = ctx.createRadialGradient(0, 0, 2, 0, 0, 16)
+    glow.addColorStop(0, 'rgba(254, 240, 138, 0.9)')
+    glow.addColorStop(1, 'rgba(254, 240, 138, 0)')
+    ctx.fillStyle = glow
     ctx.beginPath()
-    ctx.arc(0, 0, 14, 0, Math.PI * 2)
+    ctx.arc(0, 0, 16, 0, Math.PI * 2)
     ctx.fill()
-    ctx.font = '18px sans-serif'
-    ctx.textAlign = 'center'
-    ctx.fillText('🐚', 0, 6)
+
+    const shellGrad = ctx.createLinearGradient(-9, -8, 9, 8)
+    shellGrad.addColorStop(0, '#fef08a')
+    shellGrad.addColorStop(0.5, '#f59e0b')
+    shellGrad.addColorStop(1, '#b45309')
+    ctx.fillStyle = shellGrad
+    ctx.strokeStyle = '#451a03'
+    ctx.lineWidth = 1.6
+    ctx.beginPath()
+    ctx.arc(0, 2, 9, Math.PI, 0)
+    ctx.lineTo(4, 9)
+    ctx.lineTo(-4, 9)
+    ctx.closePath()
+    ctx.fill()
+    ctx.stroke()
   }
 
   ctx.restore()
@@ -865,7 +973,12 @@ function drawSurferOrBoogieBoarder(
     ctx.save()
     ctx.rotate(0.75)
     ctx.fillStyle = board.accentColor
-    ctx.fillRect(-7, -18, 14, 36)
+    ctx.strokeStyle = '#020617'
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.roundRect(-7, -18, 14, 36, 4)
+    ctx.fill()
+    ctx.stroke()
     ctx.restore()
     ctx.restore()
     return
@@ -878,97 +991,132 @@ function drawSurferOrBoogieBoarder(
     ctx.rotate(angle)
   }
 
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.78)'
+  // Cel-Shaded Twin Rooster-Tail Spray Wake Behind Board
+  const wakeGrad = ctx.createLinearGradient(0, -14, 0, -42)
+  wakeGrad.addColorStop(0, 'rgba(255, 255, 255, 0.92)')
+  wakeGrad.addColorStop(0.6, 'rgba(165, 243, 252, 0.55)')
+  wakeGrad.addColorStop(1, 'rgba(103, 232, 249, 0)')
+  ctx.fillStyle = wakeGrad
   ctx.beginPath()
-  ctx.moveTo(-6, -16)
-  ctx.lineTo(-15, -36)
-  ctx.lineTo(15, -36)
-  ctx.lineTo(6, -16)
+  ctx.moveTo(-7, -15)
+  ctx.lineTo(-18, -42)
+  ctx.lineTo(18, -42)
+  ctx.lineTo(7, -15)
   ctx.closePath()
   ctx.fill()
 
   if (invincible) {
     ctx.beginPath()
-    ctx.arc(0, 0, 24, 0, Math.PI * 2)
+    ctx.arc(0, 0, 25, 0, Math.PI * 2)
     ctx.strokeStyle = '#fde047'
-    ctx.lineWidth = 2.5
+    ctx.lineWidth = 3
     ctx.stroke()
   }
 
   if (craftType === 'boogie') {
+    // Cel-Shaded Boogie Board with Glossy Deck & Crescent Tail
+    const bgGrad = ctx.createLinearGradient(-10, -18, 10, 18)
+    bgGrad.addColorStop(0, board.accentColor)
+    bgGrad.addColorStop(1, board.topGraphicColor)
     ctx.beginPath()
-    ctx.roundRect(-9, -18, 18, 34, 4)
-    ctx.fillStyle = board.accentColor
+    ctx.roundRect(-9.5, -18, 19, 35, 4)
+    ctx.fillStyle = bgGrad
     ctx.fill()
     ctx.strokeStyle = '#020617'
-    ctx.lineWidth = 1.5
+    ctx.lineWidth = 2
     ctx.stroke()
-
-    ctx.fillStyle = board.topGraphicColor
-    ctx.fillRect(-6, -14, 12, 26)
 
     const kick = Math.sin(Date.now() * 0.025) * 3
     ctx.fillStyle = '#facc15'
-    ctx.fillRect(-7, -26 + kick, 5, 9)
-    ctx.fillRect(2, -26 - kick, 5, 9)
-
-    ctx.fillStyle = rider.accentColor
-    ctx.fillRect(-6, -10, 12, 16)
-    ctx.fillStyle = '#0f172a'
-    ctx.beginPath()
-    ctx.arc(0, 8, 5.5, 0, Math.PI * 2)
-    ctx.fill()
-  } else {
-    ctx.beginPath()
-    ctx.moveTo(0, 24)
-    ctx.quadraticCurveTo(9, 6, 7, -20)
-    ctx.lineTo(-7, -20)
-    ctx.quadraticCurveTo(-9, 6, 0, 24)
-    ctx.closePath()
-    ctx.fillStyle = board.accentColor
-    ctx.fill()
     ctx.strokeStyle = '#020617'
     ctx.lineWidth = 1.2
-    ctx.stroke()
-
-    ctx.strokeStyle = 'rgba(120, 53, 15, 0.65)'
-    ctx.lineWidth = 1
-    ctx.beginPath()
-    ctx.moveTo(0, -19)
-    ctx.lineTo(0, 22)
-    ctx.stroke()
-
-    ctx.fillStyle = '#0f172a'
-    ctx.fillRect(-4, -17, 8, 7)
-
-    ctx.fillStyle = '#0f172a'
-    ctx.fillRect(-4, -7, 8, 14)
+    ctx.fillRect(-7, -26 + kick, 5, 9)
+    ctx.strokeRect(-7, -26 + kick, 5, 9)
+    ctx.fillRect(2, -26 - kick, 5, 9)
+    ctx.strokeRect(2, -26 - kick, 5, 9)
 
     ctx.fillStyle = rider.accentColor
     ctx.beginPath()
-    ctx.arc(0, -2, 7, 0, Math.PI * 2)
+    ctx.roundRect(-6.5, -10, 13, 16, 3)
     ctx.fill()
+    ctx.stroke()
 
     ctx.fillStyle = '#fde047'
     ctx.beginPath()
-    ctx.arc(0, -6, 5, 0, Math.PI * 2)
+    ctx.arc(0, 8, 5.5, 0, Math.PI * 2)
     ctx.fill()
+    ctx.stroke()
+  } else {
+    // Cel-Shaded Surfboard with Glossy Epoxy Gradient, Stringer & Specular Rim
+    const sbGrad = ctx.createLinearGradient(-9, -20, 9, 24)
+    sbGrad.addColorStop(0, '#ffffff')
+    sbGrad.addColorStop(0.35, board.accentColor)
+    sbGrad.addColorStop(1, board.topGraphicColor)
 
+    ctx.beginPath()
+    ctx.moveTo(0, 25)
+    ctx.quadraticCurveTo(10, 6, 7.5, -20)
+    ctx.lineTo(-7.5, -20)
+    ctx.quadraticCurveTo(-10, 6, 0, 25)
+    ctx.closePath()
+    ctx.fillStyle = sbGrad
+    ctx.fill()
+    ctx.strokeStyle = '#020617'
+    ctx.lineWidth = 1.8
+    ctx.stroke()
+
+    // Cedar stringer
+    ctx.strokeStyle = 'rgba(120, 53, 15, 0.75)'
+    ctx.lineWidth = 1.2
+    ctx.beginPath()
+    ctx.moveTo(0, -19)
+    ctx.lineTo(0, 23)
+    ctx.stroke()
+
+    // Tail traction pad
+    ctx.fillStyle = '#0f172a'
+    ctx.fillRect(-4.5, -18, 9, 7)
+
+    // Cel-Shaded Surfer Crouching in Stance
+    ctx.fillStyle = '#0f172a'
+    ctx.fillRect(-4.5, -7, 9, 14)
+
+    ctx.fillStyle = rider.accentColor
+    ctx.strokeStyle = '#020617'
+    ctx.lineWidth = 1.6
+    ctx.beginPath()
+    ctx.arc(0, -2, 7.2, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.stroke()
+
+    // Sun-bleached surfer hair with highlight
+    ctx.fillStyle = '#fde047'
+    ctx.beginPath()
+    ctx.arc(0, -6, 5.2, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.stroke()
+
+    // Outstretched balance arms
     ctx.strokeStyle = rider.accentColor
-    ctx.lineWidth = 2.5
+    ctx.lineWidth = 3
     ctx.beginPath()
     ctx.moveTo(-5, -2)
-    ctx.lineTo(-11, 4)
+    ctx.lineTo(-12, 4)
     ctx.moveTo(5, -2)
-    ctx.lineTo(11, -5)
+    ctx.lineTo(12, -5)
     ctx.stroke()
   }
 
   if (inBarrel) {
-    ctx.strokeStyle = 'rgba(103, 232, 249, 0.85)'
-    ctx.lineWidth = 6
+    // Translucent Cel-Shaded Green Room Barrel Curtain Arching Over Player
+    const curtainGrad = ctx.createRadialGradient(0, 0, 12, 0, 0, 28)
+    curtainGrad.addColorStop(0, 'rgba(34, 211, 238, 0.1)')
+    curtainGrad.addColorStop(0.75, 'rgba(6, 182, 212, 0.75)')
+    curtainGrad.addColorStop(1, 'rgba(255, 255, 255, 0.95)')
+    ctx.strokeStyle = curtainGrad
+    ctx.lineWidth = 8
     ctx.beginPath()
-    ctx.arc(0, 0, 22, Math.PI * 0.85, Math.PI * 0.15)
+    ctx.arc(0, 0, 24, Math.PI * 0.82, Math.PI * 0.18)
     ctx.stroke()
   }
 
@@ -979,27 +1127,37 @@ function drawLandlordShark(ctx: CanvasRenderingContext2D, x: number, y: number) 
   ctx.save()
   ctx.translate(x, y)
 
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.75)'
+  // Churning Whitewater Vortex
+  ctx.fillStyle = 'rgba(236, 254, 255, 0.82)'
   ctx.beginPath()
-  ctx.arc(0, 0, 22, 0, Math.PI * 2)
+  ctx.arc(0, 0, 24, 0, Math.PI * 2)
   ctx.fill()
+  ctx.strokeStyle = '#0891b2'
+  ctx.lineWidth = 1.8
+  ctx.stroke()
 
-  ctx.fillStyle = '#475569'
+  // Cel-Shaded Great White Body & Dorsal Fin
+  const sharkGrad = ctx.createLinearGradient(-12, -24, 12, 24)
+  sharkGrad.addColorStop(0, '#1e293b')
+  sharkGrad.addColorStop(0.5, '#475569')
+  sharkGrad.addColorStop(1, '#cbd5e1')
+  ctx.fillStyle = sharkGrad
+  ctx.strokeStyle = '#020617'
+  ctx.lineWidth = 2
   ctx.beginPath()
-  ctx.ellipse(0, 0, 12, 24, 0, 0, Math.PI * 2)
+  ctx.ellipse(0, 0, 13, 25, 0, 0, Math.PI * 2)
   ctx.fill()
+  ctx.stroke()
 
-  ctx.fillStyle = '#1e293b'
+  // Iconic Triangular Dorsal Fin slicing the water
+  ctx.fillStyle = '#0f172a'
   ctx.beginPath()
-  ctx.moveTo(0, -10)
-  ctx.lineTo(-10, 6)
-  ctx.lineTo(10, 6)
+  ctx.moveTo(0, -14)
+  ctx.lineTo(-11, 7)
+  ctx.lineTo(11, 7)
   ctx.closePath()
   ctx.fill()
-
-  ctx.font = '18px sans-serif'
-  ctx.textAlign = 'center'
-  ctx.fillText('🦈', 0, -14)
+  ctx.stroke()
 
   ctx.restore()
 }
@@ -1012,66 +1170,74 @@ function drawBeachAndPierShoreline(
   spotId: SurfSpotId
 ) {
   const beachX = width - 135
+  const timeSec = Date.now() * 0.001
 
   ctx.save()
 
-  const foamWave = Math.sin(Date.now() * 0.004) * 6
-  ctx.fillStyle = '#bae6fd'
-  ctx.fillRect(beachX - 14 + foamWave, 0, 18, height)
-  ctx.fillStyle = '#ffffff'
-  ctx.fillRect(beachX - 4 + foamWave, 0, 6, height)
+  const foamWave = Math.sin(timeSec * 3.5) * 6
 
-  ctx.fillStyle = '#fde68a'
-  ctx.fillRect(beachX, 0, width - beachX, height)
+  // Wet Mirror-Sand Reflection Band
+  const wetGrad = ctx.createLinearGradient(beachX - 18 + foamWave, 0, beachX + 18, 0)
+  wetGrad.addColorStop(0, '#67e8f9')
+  wetGrad.addColorStop(0.45, '#bae6fd')
+  wetGrad.addColorStop(0.75, '#d97706')
+  wetGrad.addColorStop(1, '#fde68a')
+  ctx.fillStyle = wetGrad
+  ctx.fillRect(beachX - 18 + foamWave, 0, 36, height)
+
+  // Warm Golden Dry Sand Gradient
+  const sandGrad = ctx.createLinearGradient(beachX + 14, 0, width, 0)
+  sandGrad.addColorStop(0, '#fde68a')
+  sandGrad.addColorStop(0.5, '#fef08a')
+  sandGrad.addColorStop(1, '#fcd34d')
+  ctx.fillStyle = sandGrad
+  ctx.fillRect(beachX + 14, 0, width - (beachX + 14), height)
+
+  // Scalloped Shorebreak Foam Lace Line
+  ctx.strokeStyle = '#ffffff'
+  ctx.lineWidth = 4
+  ctx.beginPath()
+  ctx.moveTo(beachX - 6 + foamWave, 0)
+  for (let y = 0; y <= height; y += 32) {
+    ctx.quadraticCurveTo(
+      beachX - 12 + foamWave + Math.sin(timeSec * 2 + y * 0.05) * 5,
+      y + 16,
+      beachX - 6 + foamWave,
+      y + 32
+    )
+  }
+  ctx.stroke()
 
   const itemSpacing = 220
   const scrollOffset = (distCounter * 2.5) % itemSpacing
 
   for (let by = -140 + scrollOffset; by < height + 140; by += itemSpacing) {
-    ctx.font = '15px sans-serif'
-    ctx.textAlign = 'center'
-    ctx.fillText('🧒', beachX - 6, by + 20)
-    ctx.fillText('🏖️', beachX + 18, by + 24)
+    const seed = Math.abs(Math.round((by - scrollOffset) / itemSpacing))
 
-    ctx.font = '13px sans-serif'
-    ctx.fillText('🐚', beachX + 12, by + 65)
-    ctx.fillText('⭐', beachX + 26, by + 150)
+    // Cel-Shaded Beach Umbrella, Striped Towel & Sunbather
+    drawCelShadedUmbrellaAndSunbather(ctx, beachX + 48, by + 42, seed)
 
-    ctx.fillStyle = '#38bdf8'
-    ctx.fillRect(beachX + 38, by + 40, 24, 12)
-    ctx.font = '13px sans-serif'
-    ctx.fillText('🕶️', beachX + 50, by + 50)
+    // Cel-Shaded 3D California Lifeguard Tower
+    drawCelShadedLifeguardTower(ctx, beachX + 62, by + 112)
 
+    // Cel-Shaded WSL / Beach Fan Pavilion
+    ctx.fillStyle = '#0f172a'
+    ctx.strokeStyle = spotId === 'trestles_wsl' ? '#facc15' : '#22d3ee'
+    ctx.lineWidth = 2
     ctx.beginPath()
-    ctx.arc(beachX + 66, by + 38, 13, 0, Math.PI * 2)
-    ctx.fillStyle = '#ef4444'
+    ctx.roundRect(beachX + 22, by + 162, 102, 30, 5)
     ctx.fill()
-    ctx.strokeStyle = '#ffffff'
-    ctx.lineWidth = 1.5
     ctx.stroke()
 
-    ctx.fillStyle = '#f8fafc'
-    ctx.fillRect(beachX + 42, by + 95, 34, 24)
-    ctx.strokeStyle = '#0284c7'
-    ctx.lineWidth = 2
-    ctx.strokeRect(beachX + 42, by + 95, 34, 24)
-    ctx.fillStyle = '#ef4444'
-    ctx.font = 'bold 6px monospace'
-    ctx.fillText('LIFEGUARD', beachX + 59, by + 115)
-    ctx.font = '12px sans-serif'
-    ctx.fillText('🛟', beachX + 59, by + 106)
-
-    ctx.fillStyle = '#0f172a'
-    ctx.fillRect(beachX + 24, by + 165, 96, 26)
-    ctx.strokeStyle = spotId === 'trestles_wsl' ? '#facc15' : '#22d3ee'
-    ctx.lineWidth = 1.5
-    ctx.strokeRect(beachX + 24, by + 165, 96, 26)
-    ctx.fillStyle = '#facc15'
+    ctx.fillStyle = spotId === 'trestles_wsl' ? '#facc15' : '#67e8f9'
+    ctx.font = 'bold 7.5px monospace'
+    ctx.textAlign = 'center'
+    ctx.fillText(spotId === 'trestles_wsl' ? '🏆 WSL FINALS VIP' : '🏖️ OC BEACH FANS', beachX + 73, by + 174)
+    ctx.fillStyle = '#e0f2fe'
     ctx.font = 'bold 7px monospace'
-    ctx.fillText(spotId === 'trestles_wsl' ? '🏆 WSL FANS' : '🏖️ BEACH FANS', beachX + 72, by + 175)
-    ctx.font = '11px sans-serif'
-    ctx.fillText('🙌 🎉 📣 🤙', beachX + 72, by + 187)
+    ctx.fillText('CHEERING LINEUP 🤙', beachX + 73, by + 186)
   }
 
   ctx.restore()
 }
+

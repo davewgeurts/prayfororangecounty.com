@@ -2,6 +2,11 @@ import React, { useRef, useEffect } from 'react'
 import { CanyonRoute } from '../../utils/canyonRoute'
 import type { PlayerCarState } from '../../types/game'
 import { SNOWBOARDS_LIST, RIDERS_LIST } from '../../data/snowboardGear'
+import {
+  drawGpuOceanCausticsAndSunbeams,
+  drawCelShadedPelican,
+  drawFoamLaceStrip
+} from '../../utils/oceanShaderEngine'
 
 interface Props {
   carState: PlayerCarState;
@@ -24,6 +29,7 @@ export const CockpitView: React.FC<Props> = ({ carState }) => {
       const width = canvas.width
       const height = canvas.height
       const horizonY = height * 0.42
+      const timeSec = Date.now() * 0.001
 
       // 1. Golden-Hour Orange County Sky Gradient
       const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY)
@@ -47,11 +53,17 @@ export const CockpitView: React.FC<Props> = ({ carState }) => {
       ctx.fill()
 
       ctx.fillStyle = '#fef08a'
+      ctx.strokeStyle = '#f59e0b'
+      ctx.lineWidth = 2
       ctx.beginPath()
       ctx.arc(sunX, sunY, 26, 0, Math.PI * 2)
       ctx.fill()
+      ctx.stroke()
 
       // 2. Left Horizon: Laguna & Dana Point Headlands Bluffs; Right Horizon: Catalina Island Silhouette
+      const bluffGrad = ctx.createLinearGradient(0, horizonY - 80, 0, horizonY)
+      bluffGrad.addColorStop(0, '#b45309')
+      bluffGrad.addColorStop(1, '#451a03')
       ctx.beginPath()
       ctx.moveTo(0, horizonY)
       ctx.lineTo(0, horizonY - 65)
@@ -60,8 +72,11 @@ export const CockpitView: React.FC<Props> = ({ carState }) => {
       ctx.lineTo(430, horizonY - 25)
       ctx.lineTo(480, horizonY)
       ctx.closePath()
-      ctx.fillStyle = '#78350f'
+      ctx.fillStyle = bluffGrad
       ctx.fill()
+      ctx.strokeStyle = '#0f172a'
+      ctx.lineWidth = 2
+      ctx.stroke()
 
       // Catalina Island on right ocean horizon
       ctx.beginPath()
@@ -97,7 +112,8 @@ export const CockpitView: React.FC<Props> = ({ carState }) => {
       ctx.fillStyle = '#d97706'
       ctx.fill()
 
-      // Right roadside: Sandy beach + Turquoise Pacific Ocean!
+      // Right roadside: Sandy beach + Turquoise Pacific Ocean + WebGPU/GLSL Caustics!
+      ctx.save()
       ctx.beginPath()
       ctx.moveTo(width, horizonY)
       ctx.lineTo(roadVanishingX + roadVanishingWidth / 2, roadVanishingY)
@@ -105,25 +121,24 @@ export const CockpitView: React.FC<Props> = ({ carState }) => {
       ctx.lineTo(width, roadBottomY)
       ctx.closePath()
       const oceanGrad = ctx.createLinearGradient(width * 0.5, horizonY, width, roadBottomY)
-      oceanGrad.addColorStop(0, '#0284c7')
-      oceanGrad.addColorStop(0.55, '#06b6d4')
-      oceanGrad.addColorStop(0.82, '#67e8f9')
+      oceanGrad.addColorStop(0, '#082f49')
+      oceanGrad.addColorStop(0.35, '#0284c7')
+      oceanGrad.addColorStop(0.65, '#06b6d4')
+      oceanGrad.addColorStop(0.85, '#67e8f9')
       oceanGrad.addColorStop(1, '#fde68a')
       ctx.fillStyle = oceanGrad
       ctx.fill()
+      ctx.clip()
+      drawGpuOceanCausticsAndSunbeams(ctx, width * 0.45, horizonY, width * 0.55, roadBottomY - horizonY, timeSec)
+      ctx.restore()
 
-      // Animated whitewater wave lines rolling onto the beach on the right
+      // Animated cel-shaded whitewater wave lines rolling onto the beach on the right
       const wavePhase = (Date.now() * 0.0012) % 1
       for (let w = 0; w < 4; w++) {
         const wt = ((w / 4) + wavePhase) % 1
         const wy = horizonY + 18 + wt * (roadBottomY - horizonY - 30)
         const wxStart = roadVanishingX + roadVanishingWidth / 2 + wt * (roadBottomRightX - (roadVanishingX + roadVanishingWidth / 2)) + 18
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)'
-        ctx.lineWidth = 2 + wt * 3
-        ctx.beginPath()
-        ctx.moveTo(wxStart, wy)
-        ctx.lineTo(width - 10, wy - 8)
-        ctx.stroke()
+        drawFoamLaceStrip(ctx, wxStart, wy, width - 10, wy - 8, timeSec + w)
       }
 
       // PCH Asphalt Surface
@@ -214,29 +229,50 @@ function drawCockpitPalmTree(ctx: CanvasRenderingContext2D, x: number, y: number
   ctx.translate(x, y)
   ctx.scale(scale, scale)
 
-  // Curved trunk
-  ctx.strokeStyle = '#78350f'
+  // Cel-shaded curved segmented trunk
+  ctx.strokeStyle = '#0f172a'
+  ctx.lineWidth = 10
+  ctx.beginPath()
+  ctx.moveTo(0, 0)
+  ctx.quadraticCurveTo(8, -55, 14, -110)
+  ctx.stroke()
+
+  ctx.strokeStyle = '#92400e'
   ctx.lineWidth = 7
   ctx.beginPath()
   ctx.moveTo(0, 0)
   ctx.quadraticCurveTo(8, -55, 14, -110)
   ctx.stroke()
 
-  // Fronds
-  ctx.strokeStyle = '#15803d'
-  ctx.lineWidth = 4
-  const frondAngles = [-2.4, -1.8, -1.2, -0.5, 0.2, 0.8]
+  // Cel-shaded arching palm fronds with dark ink outline
+  const frondAngles = [-2.5, -1.9, -1.2, -0.5, 0.2, 0.85]
   for (const angle of frondAngles) {
+    const ex = 14 + Math.cos(angle) * 52
+    const ey = -110 + Math.sin(angle) * 34 + 12
+    const cx = 14 + Math.cos(angle) * 28
+    const cy = -110 + Math.sin(angle) * 24 - 14
+
     ctx.beginPath()
     ctx.moveTo(14, -110)
-    ctx.quadraticCurveTo(
-      14 + Math.cos(angle) * 28,
-      -110 + Math.sin(angle) * 24 - 10,
-      14 + Math.cos(angle) * 48,
-      -110 + Math.sin(angle) * 32 + 12
-    )
+    ctx.quadraticCurveTo(cx, cy, ex, ey)
+    ctx.quadraticCurveTo(cx, cy + 12, 14, -110)
+    ctx.closePath()
+    ctx.fillStyle = '#22c55e'
+    ctx.fill()
+    ctx.strokeStyle = '#052e16'
+    ctx.lineWidth = 2
     ctx.stroke()
   }
+
+  // Coconuts cluster at crown
+  ctx.fillStyle = '#78350f'
+  ctx.strokeStyle = '#0f172a'
+  ctx.lineWidth = 1.5
+  ctx.beginPath()
+  ctx.arc(12, -106, 4.5, 0, Math.PI * 2)
+  ctx.arc(17, -105, 4.5, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
 
   ctx.restore()
 }
@@ -275,18 +311,11 @@ function drawCockpit1000StepsArch(ctx: CanvasRenderingContext2D, x: number, y: n
 }
 
 function drawCockpitSeagullsAndSpray(ctx: CanvasRenderingContext2D, width: number, horizonY: number, bottomY: number, speedMph: number) {
-  // Gliding seagulls / pelicans in the sky
-  ctx.strokeStyle = '#f8fafc'
-  ctx.lineWidth = 2
+  const timeSec = Date.now() * 0.001
   for (let b = 0; b < 5; b++) {
     const bx = ((Date.now() * 0.03 + b * 190) % (width - 120)) + 60
     const by = 60 + (b % 3) * 42 + Math.sin(Date.now() * 0.004 + b) * 8
-    const wingY = Math.sin(Date.now() * 0.01 + b * 2) * 5
-    ctx.beginPath()
-    ctx.moveTo(bx - 10, by + wingY)
-    ctx.quadraticCurveTo(bx - 4, by - 5, bx, by)
-    ctx.quadraticCurveTo(bx + 4, by - 5, bx + 10, by + wingY)
-    ctx.stroke()
+    drawCelShadedPelican(ctx, bx, by, timeSec, b)
   }
 
   // Sunlit ocean mist particles

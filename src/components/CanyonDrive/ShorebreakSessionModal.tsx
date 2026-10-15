@@ -1,6 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Waves, Sparkles, Trophy, ArrowRight, Footprints, ShieldCheck } from 'lucide-react'
 import type { OceanBuoyTelemetry } from '../../utils/oceanBuoyFeed'
+import {
+  drawGpuOceanCausticsAndSunbeams,
+  drawCelShadedDolphin,
+  drawCelShadedSeaTurtle,
+  drawCelShadedPelican,
+  drawCelShadedUmbrellaAndSunbather,
+  drawCelShadedPalmTree
+} from '../../utils/oceanShaderEngine'
 
 interface Props {
   initialSpot: 'thousand_steps' | 'treasure_island';
@@ -91,47 +99,57 @@ export const ShorebreakSessionModal: React.FC<Props> = ({
       const w = canvas.width
       const h = canvas.height
       const g = gameRef.current
+      const timeSec = Date.now() * 0.001
 
       // 1. Sky & South Laguna Cliff Backdrop
       const sky = ctx.createLinearGradient(0, 0, 0, h * 0.55)
       if (spot === 'thousand_steps') {
-        sky.addColorStop(0, '#0c4a6e')
-        sky.addColorStop(1, '#0284c7')
+        sky.addColorStop(0, '#082f49')
+        sky.addColorStop(0.65, '#0284c7')
+        sky.addColorStop(1, '#fde047')
       } else {
-        sky.addColorStop(0, '#0f766e')
-        sky.addColorStop(1, '#14b8a6')
+        sky.addColorStop(0, '#134e4a')
+        sky.addColorStop(0.65, '#0d9488')
+        sky.addColorStop(1, '#fef08a')
       }
       ctx.fillStyle = sky
       ctx.fillRect(0, 0, w, h)
 
-      // Golden California Sun
+      // Glowing Cel-Shaded California Sun
       ctx.fillStyle = '#fef08a'
+      ctx.strokeStyle = '#f59e0b'
+      ctx.lineWidth = 2
       ctx.beginPath()
-      ctx.arc(w - 90, 52, 28, 0, Math.PI * 2)
+      ctx.arc(w - 90, 52, 26, 0, Math.PI * 2)
       ctx.fill()
+      ctx.stroke()
 
-      // Pelicans gliding across the horizon
-      const birdX = (frame * 1.4) % (w + 80) - 40
-      ctx.font = '16px sans-serif'
-      ctx.fillText('🐦', birdX, 55)
-      ctx.fillText('🐦', birdX - 24, 64)
+      // Cel-Shaded Pelicans gliding across the horizon
+      const birdX = ((frame * 1.4) % (w + 80)) - 40
+      drawCelShadedPelican(ctx, birdX, 52, timeSec, 0)
+      drawCelShadedPelican(ctx, birdX - 28, 62, timeSec, 1.4)
 
-      // 2. Turquoise Cove Water
-      const ocean = ctx.createLinearGradient(160, h * 0.45, w, h)
+      // 2. Turquoise Cove Water + WebGPU/GLSL Ocean Caustics & Sunbeams
+      const ocean = ctx.createLinearGradient(140, h * 0.45, w, h)
       ocean.addColorStop(0, '#67e8f9')
       ocean.addColorStop(0.45, '#06b6d4')
-      ocean.addColorStop(1, '#0369a1')
+      ocean.addColorStop(1, '#082f49')
       ctx.fillStyle = ocean
       ctx.fillRect(140, h * 0.46, w - 140, h * 0.54)
 
-      // Dolphins & Sea Turtles in the background cove
-      const dolphinY = h * 0.52 + Math.sin(frame * 0.06) * 8
-      ctx.font = '20px sans-serif'
-      ctx.fillText('🐬', w - 140, dolphinY)
-      ctx.fillText('🐢', w - 230, h * 0.58 + Math.cos(frame * 0.05) * 5)
+      drawGpuOceanCausticsAndSunbeams(ctx, 140, h * 0.46, w - 140, h * 0.54, timeSec)
+
+      // Cel-Shaded Dolphins & Sea Turtles in the background cove
+      const dolphinY = h * 0.54 + Math.sin(frame * 0.06) * 8
+      drawCelShadedDolphin(ctx, w - 135, dolphinY, timeSec, 1)
+      drawCelShadedSeaTurtle(ctx, w - 235, h * 0.62 + Math.cos(frame * 0.05) * 5, timeSec, 2)
 
       // 3. Wet Golden Sand & Cliff Stairs / Keyhole Arch on Left
-      ctx.fillStyle = '#fde68a'
+      const sandGrad = ctx.createLinearGradient(0, h * 0.38, 240, h)
+      sandGrad.addColorStop(0, '#fef08a')
+      sandGrad.addColorStop(0.6, '#fde68a')
+      sandGrad.addColorStop(1, '#f59e0b')
+      ctx.fillStyle = sandGrad
       ctx.beginPath()
       ctx.moveTo(0, h * 0.38)
       ctx.lineTo(235, h)
@@ -140,8 +158,10 @@ export const ShorebreakSessionModal: React.FC<Props> = ({
       ctx.fill()
 
       if (spot === 'thousand_steps') {
-        // 219 Steep Cliff Stairs + Sea Cave
+        // 219 Steep Cliff Stairs + Sea Cave with Cel Outline
         ctx.fillStyle = '#365314'
+        ctx.strokeStyle = '#0f172a'
+        ctx.lineWidth = 2.2
         ctx.beginPath()
         ctx.moveTo(0, 30)
         ctx.lineTo(135, 95)
@@ -149,6 +169,7 @@ export const ShorebreakSessionModal: React.FC<Props> = ({
         ctx.lineTo(0, 225)
         ctx.closePath()
         ctx.fill()
+        ctx.stroke()
 
         ctx.strokeStyle = '#e2e8f0'
         ctx.lineWidth = 7
@@ -159,12 +180,16 @@ export const ShorebreakSessionModal: React.FC<Props> = ({
         ctx.stroke()
         ctx.setLineDash([])
 
+        drawCelShadedPalmTree(ctx, 32, 46, 18, timeSec)
+
         ctx.fillStyle = '#0f172a'
         ctx.font = 'bold 10px monospace'
         ctx.fillText('219 CLIFF STAIRS', 14, 240)
       } else {
-        // Treasure Island Montage Keyhole Rock Arch
+        // Treasure Island Montage Keyhole Rock Arch with Cel Outline
         ctx.fillStyle = '#92400e'
+        ctx.strokeStyle = '#0f172a'
+        ctx.lineWidth = 2.2
         ctx.beginPath()
         ctx.moveTo(20, 225)
         ctx.lineTo(40, 95)
@@ -176,25 +201,23 @@ export const ShorebreakSessionModal: React.FC<Props> = ({
         ctx.lineTo(58, 225)
         ctx.closePath()
         ctx.fill()
+        ctx.stroke()
+
+        drawCelShadedPalmTree(ctx, 26, 82, 18, timeSec)
 
         ctx.fillStyle = '#0f172a'
         ctx.font = 'bold 10px monospace'
         ctx.fillText('MONTAGE ARCH', 24, 240)
       }
 
-      // Beach Fans, Sunbathers, Kids & Seashells on the sand
-      ctx.font = '16px sans-serif'
-      ctx.fillText('🏖️', 45, 268)
-      ctx.fillText('🧒', 95, 272)
-      ctx.fillText('🐚', 135, 275)
-      ctx.fillText('🛟', 175, 278)
+      // Cel-Shaded Beach Umbrella & Sunbather on the sand
+      drawCelShadedUmbrellaAndSunbather(ctx, 62, 264, 1)
 
       // 4. Incoming Heavy Shorebreak Barrel Wave!
       g.waveX -= g.waveSpeed
       if (g.waveX < 185) {
         g.waveX = w - 40
         if (g.playerState === 'in_tube') {
-          // Completed a full shorebreak barrel!
           const bonus = 320
           setEarnedPrayers(p => p + bonus)
           setTubesMade(t => t + 1)
@@ -206,7 +229,7 @@ export const ShorebreakSessionModal: React.FC<Props> = ({
         setTubeMeter(0)
       }
 
-      // Draw Hollow Curling Shorebreak Wave
+      // Draw Cel-Shaded Hollow Curling Shorebreak Wave
       const wx = g.waveX
       const wy = 195
       const waveGrad = ctx.createLinearGradient(wx - 65, wy - 55, wx + 45, wy + 35)
@@ -215,11 +238,14 @@ export const ShorebreakSessionModal: React.FC<Props> = ({
       waveGrad.addColorStop(1, '#0284c7')
 
       ctx.fillStyle = waveGrad
+      ctx.strokeStyle = '#082f49'
+      ctx.lineWidth = 2.2
       ctx.beginPath()
       ctx.moveTo(wx - 55, wy + 38)
       ctx.quadraticCurveTo(wx - 10, wy - 68, wx + 55, wy + 38)
       ctx.closePath()
       ctx.fill()
+      ctx.stroke()
 
       // Hollow Green Room Tube Pocket inside the wave
       ctx.fillStyle = '#083344'
