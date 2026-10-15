@@ -9,9 +9,11 @@
     "typecheck": "tsc -b",
     "lint": "oxlint",
     "preview": "vite preview",
-    "docker:up": "docker compose up --build",
+    "docker:up": "docker compose up -d --build",
     "docker:down": "docker compose down",
-    "deploy": "npm run build && aws s3 sync dist/ s3://prayfororangecounty.com/ --delete --region us-west-2 && aws s3 cp dist/index.html s3://prayfororangecounty.com/index.html --cache-control 'public, max-age=0, must-revalidate' --content-type 'text/html' --region us-west-2"
+    "docker:logs": "docker compose logs -f web",
+    "docker:prod": "docker compose --profile prod up -d --build",
+    "deploy": "npm run build && aws s3 sync dist/ s3://prayfortheocean.com/ --delete --region us-west-2 && aws s3 sync dist/ s3://prayfororangecounty.com/ --delete --region us-west-2 && aws cloudfront create-invalidation --distribution-id E27UERX00AWR8K --paths '/*'"
   },
   "dependencies": {
     "@davewgeurts/rivpak": "file:.yalc/@davewgeurts/rivpak",
