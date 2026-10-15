@@ -1,8 +1,10 @@
-import React, { useRef, useEffect, useState } from 'react'
-import { ArrowLeft, Trophy, Sparkles, Waves, Eye } from 'lucide-react'
+import React, { useRef, useEffect, useState, useCallback } from 'react'
+import { ArrowLeft, Trophy, Sparkles, Waves, Eye, HeartHandshake, Zap } from 'lucide-react'
 import { SNOWBOARDS_LIST, RIDERS_LIST, type Snowboard, type RiderPro } from '../../data/snowboardGear'
 import { SURF_SPOTS, type SurfSpotId } from '../../types/game'
 import { ChairliftRideView } from './ChairliftRideView'
+import { useOceanBuoyFeed } from '../../utils/oceanBuoyFeed'
+import confetti from 'canvas-confetti'
 
 interface Props {
   onReturnToDrive: () => void;
@@ -22,6 +24,7 @@ interface SurfObstacle {
     | 'kelp_rock'
     | 'wave_lip'
     | 'barrel_tube'
+    | 'peeling_wall'
     | 'dolphin'
     | 'sea_turtle'
     | 'pelican_flock'
@@ -29,7 +32,18 @@ interface SurfObstacle {
   width: number;
   height: number;
   hit: boolean;
+  localQuote?: string;
+  peelDirection?: 'left' | 'right';
 }
+
+const LOCAL_QUOTES = [
+  'RESPECT THE PRIORITY!',
+  '2% CREW LINEUP!',
+  'GO! THIS SET IS FIRING!',
+  'GOT ANY TACO STAND?!',
+  'DEEP IN THE GREEN ROOM!',
+  'LOCALS ONLY ON THE PEAK!'
+]
 
 export const BrightonSkiFree: React.FC<Props> = ({
   onReturnToDrive,
@@ -43,6 +57,7 @@ export const BrightonSkiFree: React.FC<Props> = ({
   const board = SNOWBOARDS_LIST.find(b => b.id === selectedBoardId) || SNOWBOARDS_LIST[0]
   const rider = RIDERS_LIST.find(r => r.id === selectedRiderId) || RIDERS_LIST[0]
   const activeSpot = SURF_SPOTS.find(s => s.id === selectedSpotId) || SURF_SPOTS[2]
+  const buoy = useOceanBuoyFeed()
 
   const [viewMode, setViewMode] = useState<'shredding' | 'chairlift'>('chairlift')
   const [rideModeOverride, setRideModeOverride] = useState<'surfboard' | 'boogie' | null>(null)
@@ -53,6 +68,7 @@ export const BrightonSkiFree: React.FC<Props> = ({
   const craftTypeRef = useRef(effectiveCraftType)
   const spotRef = useRef(activeSpot)
   const waxMultiplierRef = useRef(waxSpeedMultiplier)
+  const buoyScaleRef = useRef(buoy.waveScaleMultiplier)
 
   useEffect(() => {
     boardRef.current = board
@@ -60,7 +76,8 @@ export const BrightonSkiFree: React.FC<Props> = ({
     craftTypeRef.current = effectiveCraftType
     spotRef.current = activeSpot
     waxMultiplierRef.current = waxSpeedMultiplier
-  }, [board, rider, effectiveCraftType, activeSpot, waxSpeedMultiplier])
+    buoyScaleRef.current = buoy.waveScaleMultiplier
+  }, [board, rider, effectiveCraftType, activeSpot, waxSpeedMultiplier, buoy.waveScaleMultiplier])
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const hasPassBonus = purchasedPassIds.includes('brighton-day') || purchasedPassIds.includes('wasatch-dual-gold')
@@ -69,9 +86,63 @@ export const BrightonSkiFree: React.FC<Props> = ({
   const [isWipedOut, setIsWipedOut] = useState(false)
   const [yetiDistance, setYetiDistance] = useState(999)
   const [activeCheer, setActiveCheer] = useState<string | null>(null)
-  const [lastWaveJudgeScore, setLastWaveJudgeScore] = useState<number>(8.65)
-  const [bestTwoWaveTotal, setBestTwoWaveTotal] = useState<number>(16.85)
+
+  // WSL Finals Head-to-Head Heat State
+  const rivalName = rider.name.includes('Griffin') ? 'Filipe Toledo' : 'Griffin Colapinto'
+  const [rivalTwoWaveTotal] = useState<number>(17.15)
+  const [topWaves, setTopWaves] = useState<number[]>([8.65, 8.20])
+  const lastWaveJudgeScore = topWaves[0] || 8.65
+  const bestTwoWaveTotal = +((topWaves[0] || 0) + (topWaves[1] || 0)).toFixed(2)
+  const [hasPriority, setHasPriority] = useState<boolean>(true)
+  const [wslChampCrowned, setWslChampCrowned] = useState<boolean>(false)
+  const [showPodiumModal, setShowPodiumModal] = useState<boolean>(false)
+
+  // Green Room Tube Meter & Local Respect Meter
   const [inBarrel, setInBarrel] = useState<boolean>(false)
+  const [greenRoomMeter, setGreenRoomMeter] = useState<number>(20)
+  const [localRespect, setLocalRespect] = useState<number>(hasPassBonus ? 88 : 72)
+  const localRespectRef = useRef(localRespect)
+  useEffect(() => {
+    localRespectRef.current = localRespect
+  }, [localRespect])
+
+  const recordWaveScore = useCallback((waveScore: number) => {
+    setTopWaves(prev => {
+      const next = [waveScore, ...prev].sort((a, b) => b - a).slice(0, 2)
+      const total = +((next[0] || 0) + (next[1] || 0)).toFixed(2)
+      if (total >= 17.5 && !wslChampCrowned) {
+        setWslChampCrowned(true)
+        setShowPodiumModal(true)
+        try {
+          confetti({ particleCount: 90, spread: 75, origin: { y: 0.6 } })
+        } catch {
+          // ignore confetti errors in headless mode
+        }
+      }
+      return next
+    })
+  }, [wslChampCrowned])
+
+  // Throw Shaka / Share Taco Stand with Locals (`G` key or HUD button)
+  const handleThrowShakaToLocals = useCallback(() => {
+    setLocalRespect(r => Math.min(100, r + 18))
+    setHasPriority(true)
+    setScore(s => s + 250)
+    setActiveCheer('🤙 Threw a Shaka & shared Taco Stand Al Pastor with the locals! +18% Respect & Lineup Priority!')
+    setTimeout(() => setActiveCheer(null), 2000)
+  }, [])
+
+  // Jet-Ski Tow-Back to Peak (`J` key or HUD button)
+  const handleJetSkiTowBack = useCallback(() => {
+    skierRef.current.x = 420
+    skierRef.current.y = 165
+    skierRef.current.invincibleTimer = 150
+    yetiRef.current.y = -260
+    setHasPriority(true)
+    setScore(s => s + 150)
+    setActiveCheer('🚤 WSL Jet-Ski Assist towed you straight back to the A-Frame Peak with Priority!')
+    setTimeout(() => setActiveCheer(null), 2000)
+  }, [])
 
   const skierRef = useRef({
     x: 420,
@@ -100,6 +171,11 @@ export const BrightonSkiFree: React.FC<Props> = ({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       keysRef.current[e.key] = true
+      if (e.key === 'g' || e.key === 'G') {
+        handleThrowShakaToLocals()
+      } else if (e.key === 'j' || e.key === 'J') {
+        handleJetSkiTowBack()
+      }
     }
     const handleKeyUp = (e: KeyboardEvent) => {
       keysRef.current[e.key] = false
@@ -118,27 +194,30 @@ export const BrightonSkiFree: React.FC<Props> = ({
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
     }
-  }, [])
+  }, [handleThrowShakaToLocals, handleJetSkiTowBack])
 
   function generateObstacle(y: number): SurfObstacle {
     const rand = Math.random()
     let type: SurfObstacle['type'] = 'local_surfer'
-    if (rand < 0.24) type = 'local_surfer'
-    else if (rand < 0.42) type = 'kelp_rock'
-    else if (rand < 0.58) type = 'wave_lip'
-    else if (rand < 0.72) type = 'barrel_tube'
-    else if (rand < 0.81) type = 'dolphin'
-    else if (rand < 0.89) type = 'sea_turtle'
-    else if (rand < 0.95) type = 'pelican_flock'
+    if (rand < 0.20) type = 'local_surfer'
+    else if (rand < 0.33) type = 'kelp_rock'
+    else if (rand < 0.48) type = 'wave_lip'
+    else if (rand < 0.64) type = 'barrel_tube'
+    else if (rand < 0.78) type = 'peeling_wall'
+    else if (rand < 0.85) type = 'dolphin'
+    else if (rand < 0.91) type = 'sea_turtle'
+    else if (rand < 0.96) type = 'pelican_flock'
     else type = 'seashell_reef'
 
     return {
-      x: 55 + Math.random() * 650, // Keep left of the sandy beach shoreline
+      x: 55 + Math.random() * 650,
       y,
       type,
-      width: type === 'barrel_tube' ? 54 : type === 'wave_lip' ? 42 : 28,
-      height: type === 'barrel_tube' ? 28 : 24,
-      hit: false
+      width: type === 'peeling_wall' ? 110 : type === 'barrel_tube' ? 54 : type === 'wave_lip' ? 42 : 28,
+      height: type === 'peeling_wall' ? 32 : type === 'barrel_tube' ? 28 : 24,
+      hit: false,
+      localQuote: LOCAL_QUOTES[Math.floor(Math.random() * LOCAL_QUOTES.length)],
+      peelDirection: Math.random() > 0.5 ? 'right' : 'left'
     }
   }
 
@@ -167,42 +246,46 @@ export const BrightonSkiFree: React.FC<Props> = ({
       ctx.fillStyle = oceanGrad
       ctx.fillRect(0, 0, width, height)
 
-      // Animated scrolling swell lines across the ocean
+      // Animated scrolling A-Frame & Peeling Swell Lines across the ocean
       const swellOffset = (distCounter * 2.2) % 140
       for (let sy = -80 + swellOffset; sy < height + 80; sy += 140) {
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)'
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.24)'
         ctx.lineWidth = 5
         ctx.beginPath()
         ctx.moveTo(0, sy)
-        ctx.quadraticCurveTo(width * 0.4, sy + 18, width - 135, sy - 6)
+        ctx.quadraticCurveTo(width * 0.42, sy - 22, width - 135, sy + 8)
         ctx.stroke()
       }
 
       // Handle Surfer / Boogie Boarder input
       if (!skier.crashed) {
         if (keysRef.current['ArrowLeft'] || keysRef.current['a'] || keysRef.current['A']) {
-          skier.speedX = Math.max(-6.2, skier.speedX - 0.5)
-          skier.angle = -0.4
+          skier.speedX = Math.max(-6.4, skier.speedX - 0.52)
+          skier.angle = -0.42
         } else if (keysRef.current['ArrowRight'] || keysRef.current['d'] || keysRef.current['D']) {
-          skier.speedX = Math.min(6.2, skier.speedX + 0.5)
-          skier.angle = 0.4
+          skier.speedX = Math.min(6.4, skier.speedX + 0.52)
+          skier.angle = 0.42
         } else {
           skier.speedX *= 0.92
           skier.angle *= 0.8
         }
 
-        const wMult = waxMultiplierRef.current || 1.0
+        const wMult = (waxMultiplierRef.current || 1.0) * (buoyScaleRef.current || 1.0)
         if (keysRef.current['ArrowDown'] || keysRef.current['s'] || keysRef.current['S']) {
-          skier.speedY = Math.min(10.5 * wMult, skier.speedY + 0.16)
+          skier.speedY = Math.min(11.0 * wMult, skier.speedY + 0.18)
         } else if (keysRef.current['ArrowUp'] || keysRef.current['w'] || keysRef.current['W']) {
+          // Stalling on the wave face builds Green Room Tube Meter!
           skier.speedY = Math.max(2.2, skier.speedY - 0.2)
+          if (skier.barrelTimer > 0) {
+            setGreenRoomMeter(m => Math.min(100, m + 0.6))
+          }
         } else {
           skier.speedY = 5.2 * wMult
         }
 
         skier.x += skier.speedX
         if (skier.x < 35) skier.x = 35
-        if (skier.x > width - 165) skier.x = width - 165 // Stay in ocean left of beach shoreline
+        if (skier.x > width - 165) skier.x = width - 165
 
         distCounter += skier.speedY * 0.4
         setDistance(Math.round(distCounter))
@@ -239,10 +322,10 @@ export const BrightonSkiFree: React.FC<Props> = ({
         const obs = obstaclesRef.current[i]
         obs.y -= scrollSpeed
 
-        drawOceanObstacle(ctx, obs, spotRef.current.id)
+        drawOceanObstacle(ctx, obs, spotRef.current.id, localRespectRef.current)
 
-        // Collision detection
-        if (!obs.hit && !skier.inAir && Math.abs(obs.x - skier.x) < 26 && Math.abs(obs.y - skier.y) < 22) {
+        const hitRadiusX = obs.type === 'peeling_wall' ? 52 : 28
+        if (!obs.hit && !skier.inAir && Math.abs(obs.x - skier.x) < hitRadiusX && Math.abs(obs.y - skier.y) < 24) {
           obs.hit = true
           const isBoogie = craftTypeRef.current === 'boogie'
 
@@ -252,35 +335,47 @@ export const BrightonSkiFree: React.FC<Props> = ({
             skier.spin = 0
             const bonus = Math.round(320 * (boardRef.current.statsBonus.trickBonus || 1))
             setScore(s => s + bonus)
-            const judgeWave = +(8.5 + Math.random() * 1.4).toFixed(2)
-            setLastWaveJudgeScore(judgeWave)
-            setBestTwoWaveTotal(prev => Math.min(20, +(Math.max(prev, judgeWave + 8.8)).toFixed(2)))
+            const judgeWave = +(8.7 + Math.random() * 1.25).toFixed(2)
+            recordWaveScore(judgeWave)
             setActiveCheer(
               isBoogie
-                ? 'BOOSTED A HUGE EL ROLLO / ARS FLIP OFF THE CLOSEOUT LIP! 🌊🔥'
-                : 'STOMPED A FULL-ROTATION AIR REVERSE OFF THE LIP! 🏄‍♂️🔥'
+                ? `BOOSTED A HUGE EL ROLLO / ARS FLIP OFF THE CLOSEOUT LIP! (${judgeWave} pts) 🌊🔥`
+                : `STOMPED A FULL-ROTATION AIR REVERSE OFF THE LIP! (${judgeWave} pts) 🏄‍♂️🔥`
             )
             setTimeout(() => setActiveCheer(null), 1900)
-          } else if (obs.type === 'barrel_tube') {
-            skier.barrelTimer = 42
+          } else if (obs.type === 'barrel_tube' || obs.type === 'peeling_wall') {
+            skier.barrelTimer = 48
             setInBarrel(true)
+            setGreenRoomMeter(m => {
+              const nextM = Math.min(100, m + 34)
+              if (nextM >= 100) {
+                recordWaveScore(10.0)
+                setScore(s => s + 1000)
+                setActiveCheer('🏆 10.00 PERFECT GREEN ROOM SPIT BARREL! WSL JUDGES STANDING OVATION! 🏆')
+                return 25
+              }
+              return nextM
+            })
             const bonus = Math.round(450 * (boardRef.current.statsBonus.powFloat || 1))
             setScore(s => s + bonus)
-            const judgeWave = +(9.2 + Math.random() * 0.8).toFixed(2)
-            setLastWaveJudgeScore(judgeWave)
-            setBestTwoWaveTotal(prev => Math.min(20, +(Math.max(prev, judgeWave + 9.1)).toFixed(2)))
+            const judgeWave = +(9.25 + Math.random() * 0.74).toFixed(2)
+            recordWaveScore(judgeWave)
             setActiveCheer(
-              isBoogie
-                ? `DEEP SHOREBREAK SPIT BARREL ON THE BOOGIE! Judges score: ${judgeWave}! 🌊`
-                : `LOCKED IN THE GREEN ROOM BARREL! WSL Judges throw a ${judgeWave}! 🏆`
+              obs.type === 'peeling_wall'
+                ? `CARVED THE ${obs.peelDirection?.toUpperCase()} PEELING A-FRAME WALL INTO THE TUBE! (${judgeWave}) 🌊`
+                : isBoogie
+                  ? `DEEP SHOREBREAK SPIT BARREL ON THE BOOGIE! Judges score: ${judgeWave}! 🌊`
+                  : `LOCKED IN THE GREEN ROOM BARREL! WSL Judges throw a ${judgeWave}! 🏆`
             )
             setTimeout(() => setActiveCheer(null), 2000)
           } else if (obs.type === 'dolphin') {
             setScore(s => s + 350)
-            setActiveCheer('🐬 A pod of Pacific Dolphins isparty-wave gliding right alongside you! (+350 Pts)')
+            setLocalRespect(r => Math.min(100, r + 6))
+            setActiveCheer('🐬 A pod of Pacific Dolphins is party-wave gliding right alongside you! (+350 Pts)')
             setTimeout(() => setActiveCheer(null), 1800)
           } else if (obs.type === 'sea_turtle') {
             setScore(s => s + 300)
+            setLocalRespect(r => Math.min(100, r + 8))
             setActiveCheer('🐢 Ancient Sea Turtle (Honu) blessed your line in the reef shallows! (+300 Pts)')
             setTimeout(() => setActiveCheer(null), 1800)
           } else if (obs.type === 'pelican_flock') {
@@ -292,14 +387,31 @@ export const BrightonSkiFree: React.FC<Props> = ({
             setScore(s => s + 400)
             setActiveCheer('🐚 Collected a Golden Pacific Seashell! 3 Seconds Reef & Local Immunity! (+400 Pts)')
             setTimeout(() => setActiveCheer(null), 1800)
-          } else if (obs.type === 'local_surfer' || obs.type === 'kelp_rock') {
+          } else if (obs.type === 'local_surfer') {
+            // If OC Local Respect >= 80, locals call you into the wave instead of wiping you out!
+            if (localRespectRef.current >= 80 || skier.invincibleTimer > 0 || skier.barrelTimer > 0) {
+              setScore(s => s + 220)
+              setActiveCheer('🤙 Local Crew called you into the bomb set! "GO BRO, ALL YOURS!" (+220 Pts)')
+              setTimeout(() => setActiveCheer(null), 1700)
+            } else {
+              setLocalRespect(r => Math.max(10, r - 12))
+              setHasPriority(false)
+              skier.crashed = true
+              setIsWipedOut(true)
+              setActiveCheer('⚠️ Dropped in on a local without Priority! Press G to throw a Shaka & share Taco Stand!')
+              setTimeout(() => {
+                skier.crashed = false
+                setIsWipedOut(false)
+              }, 1500)
+            }
+          } else if (obs.type === 'kelp_rock') {
             if (skier.invincibleTimer <= 0 && skier.barrelTimer <= 0) {
               skier.crashed = true
               setIsWipedOut(true)
               setTimeout(() => {
                 skier.crashed = false
                 setIsWipedOut(false)
-              }, 1600)
+              }, 1500)
             }
           }
         }
@@ -353,7 +465,7 @@ export const BrightonSkiFree: React.FC<Props> = ({
 
     animId = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(animId)
-  }, [viewMode])
+  }, [viewMode, recordWaveScore])
 
   if (viewMode === 'chairlift') {
     return (
@@ -378,89 +490,157 @@ export const BrightonSkiFree: React.FC<Props> = ({
   return (
     <div className="relative w-full h-full min-h-[560px] bg-sky-950 flex flex-col items-center justify-center overflow-hidden select-none">
       {/* TOP HUD OVERLAY */}
-      <div className="absolute top-3 left-3 right-3 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
-        <div className="flex flex-wrap items-center gap-2 pointer-events-auto">
-          <button
-            onClick={onReturnToDrive}
-            className="px-3 py-1.5 rounded-lg bg-slate-950/90 hover:bg-slate-900 text-cyan-400 border border-slate-700 font-mono text-xs flex items-center gap-1.5 cursor-pointer backdrop-blur-sm transition-all"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Back to PCH Surf Wagon</span>
-          </button>
+      <div className="absolute top-3 left-3 right-3 z-20 flex flex-col gap-2 pointer-events-none">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2 pointer-events-auto">
+            <button
+              onClick={onReturnToDrive}
+              className="px-3 py-1.5 rounded-lg bg-slate-950/90 hover:bg-slate-900 text-cyan-400 border border-slate-700 font-mono text-xs flex items-center gap-1.5 cursor-pointer backdrop-blur-sm transition-all"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>PCH Surf Wagon</span>
+            </button>
 
-          <button
-            onClick={() => setViewMode('chairlift')}
-            className="px-3 py-1.5 rounded-lg bg-cyan-950/90 hover:bg-cyan-900 text-cyan-200 border border-cyan-500 font-mono text-xs flex items-center gap-1.5 cursor-pointer backdrop-blur-sm transition-all"
-            title="Check the Beach, Pier & WSL Lineup Overlook"
-          >
-            <Eye className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Beach &amp; Pier Overlook</span>
-          </button>
+            <button
+              onClick={() => setViewMode('chairlift')}
+              className="px-3 py-1.5 rounded-lg bg-cyan-950/90 hover:bg-cyan-900 text-cyan-200 border border-cyan-500 font-mono text-xs flex items-center gap-1.5 cursor-pointer backdrop-blur-sm transition-all"
+              title="Check the Beach, Pier & WSL Lineup Overlook"
+            >
+              <Eye className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Beach Overlook</span>
+            </button>
 
-          {/* Live Surfboard vs Boogie Board Toggle */}
-          <button
-            onClick={() => setRideModeOverride(effectiveCraftType === 'boogie' ? 'surfboard' : 'boogie')}
-            className="px-3 py-1.5 rounded-lg bg-amber-950/90 hover:bg-amber-900 text-amber-300 border border-amber-500 font-mono text-xs font-bold flex items-center gap-1.5 cursor-pointer backdrop-blur-sm transition-all"
-            title="Switch between Stand-Up Surfing and Prone/Drop-Knee Boogie Boarding!"
-          >
-            <span>{effectiveCraftType === 'boogie' ? '🌊 BOOGIE BOARDING' : '🏄 STAND-UP SURFING'}</span>
-            <span className="text-[10px] text-amber-200 underline">(Switch)</span>
-          </button>
+            {/* Live Surfboard vs Boogie Board Toggle */}
+            <button
+              onClick={() => setRideModeOverride(effectiveCraftType === 'boogie' ? 'surfboard' : 'boogie')}
+              className="px-3 py-1.5 rounded-lg bg-amber-950/90 hover:bg-amber-900 text-amber-300 border border-amber-500 font-mono text-xs font-bold flex items-center gap-1.5 cursor-pointer backdrop-blur-sm transition-all"
+            >
+              <span>{effectiveCraftType === 'boogie' ? '🌊 BOOGIE MODE' : '🏄 SURFBOARD MODE'}</span>
+              <span className="text-[10px] text-amber-200 underline">(Switch)</span>
+            </button>
 
-          {/* Spot Switcher Pills */}
-          <div className="hidden lg:flex items-center gap-1 bg-slate-950/90 p-1 rounded-lg border border-slate-700">
-            {SURF_SPOTS.map((spot) => (
-              <button
-                key={spot.id}
-                onClick={() => onSelectSpot?.(spot.id)}
-                className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold cursor-pointer transition-all ${
-                  spot.id === activeSpot.id
-                    ? 'bg-cyan-400 text-slate-950'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                {spot.shortName}
-              </button>
-            ))}
+            {/* Throw Shaka / Share Taco with Locals Button */}
+            <button
+              onClick={handleThrowShakaToLocals}
+              className="px-3 py-1.5 rounded-lg bg-emerald-950/90 hover:bg-emerald-900 text-emerald-300 border border-emerald-500 font-mono text-xs font-bold flex items-center gap-1.5 cursor-pointer backdrop-blur-sm transition-all"
+              title="Throw a Shaka & Share Taco Stand Al Pastor with the Lineup Locals (Shortcut: G)"
+            >
+              <HeartHandshake className="w-3.5 h-3.5 text-emerald-400" />
+              <span>🤙 Shaka Locals (G)</span>
+            </button>
+
+            {/* WSL Jet-Ski Assist Button */}
+            <button
+              onClick={handleJetSkiTowBack}
+              className="hidden sm:flex px-2.5 py-1.5 rounded-lg bg-sky-950/90 hover:bg-sky-900 text-sky-200 border border-sky-500 font-mono text-xs items-center gap-1 cursor-pointer backdrop-blur-sm transition-all"
+              title="Jet-Ski Tow-Back to the Peak with Priority (Shortcut: J)"
+            >
+              <Zap className="w-3.5 h-3.5 text-amber-400" />
+              <span>🚤 Jet-Ski (J)</span>
+            </button>
+
+            {/* Spot Switcher Pills */}
+            <div className="hidden xl:flex items-center gap-1 bg-slate-950/90 p-1 rounded-lg border border-slate-700">
+              {SURF_SPOTS.map((spot) => (
+                <button
+                  key={spot.id}
+                  onClick={() => onSelectSpot?.(spot.id)}
+                  className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold cursor-pointer transition-all ${
+                    spot.id === activeSpot.id
+                      ? 'bg-cyan-400 text-slate-950'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {spot.shortName}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* WSL Broadcast Head-to-Head Heat Scorebug */}
+          <div className="flex flex-wrap items-center gap-2 pointer-events-auto">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-950/92 border border-amber-500/80 font-mono text-xs text-white backdrop-blur-sm">
+              <span className="px-1.5 py-0.5 rounded bg-amber-400 text-slate-950 font-black text-[10px]">
+                {hasPriority ? 'PRIORITY' : 'HEAT'}
+              </span>
+              <span>
+                YOU <strong className="text-emerald-400">{bestTwoWaveTotal.toFixed(2)}</strong>
+              </span>
+              <span className="text-slate-500">vs</span>
+              <span className="hidden sm:inline text-slate-300">
+                {rivalName} <strong className="text-rose-300">{rivalTwoWaveTotal.toFixed(2)}</strong>
+              </span>
+              <span className="text-cyan-300 text-[11px]">(Last: {lastWaveJudgeScore.toFixed(2)})</span>
+            </div>
+
+            <div className="px-3 py-1.5 rounded-lg bg-slate-950/90 border border-slate-700 font-mono text-xs text-white backdrop-blur-sm flex items-center gap-1.5">
+              <Trophy className="w-3.5 h-3.5 text-amber-400" />
+              <span><span className="text-amber-400 font-bold">{score}</span></span>
+            </div>
           </div>
         </div>
 
-        {/* WSL Broadcast Scorebug & Telemetry */}
-        <div className="flex items-center gap-2 pointer-events-auto">
-          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-950/90 border border-amber-500/70 font-mono text-xs text-white backdrop-blur-sm">
-            <span className="text-amber-400 font-black">WSL HEAT:</span>
-            <span>LAST WAVE <strong className="text-cyan-300">{lastWaveJudgeScore.toFixed(2)}</strong></span>
-            <span>&bull;</span>
-            <span>TOTAL <strong className="text-emerald-400">{bestTwoWaveTotal.toFixed(2)}</strong>/20.0</span>
+        {/* SECOND TELEMETRY BAR: Live NOAA Buoy + Green Room Tube Meter + OC Local Respect Meter */}
+        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono pointer-events-auto">
+          <div className="px-3 py-1 rounded-lg bg-slate-950/85 border border-cyan-500/40 text-cyan-200 flex items-center gap-2">
+            <span className="text-cyan-400 font-bold">🌊 {buoy.stationId}:</span>
+            <span>
+              {buoy.waveHeightFt}–{buoy.waveMaxFt}ft @ {buoy.swellPeriodSec}s {buoy.swellCompass}
+            </span>
+            <span className="hidden md:inline">&bull; {buoy.waterTempF}°F &bull; Tide {buoy.tideStage}</span>
+            <span className="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-bold">
+              {buoy.surfRating}
+            </span>
           </div>
 
-          <div className="px-3 py-1.5 rounded-lg bg-slate-950/90 border border-slate-700 font-mono text-xs text-white backdrop-blur-sm">
-            WAVE DIST: <span className="text-cyan-400 font-bold">{distance}M</span>
-          </div>
+          <div className="flex items-center gap-3">
+            {/* Green Room Tube Meter */}
+            <div className="px-3 py-1 rounded-lg bg-slate-950/85 border border-cyan-500/40 flex items-center gap-2 text-cyan-200">
+              <span>GREEN ROOM TUBE:</span>
+              <div className="w-24 h-2.5 bg-slate-800 rounded-full overflow-hidden border border-cyan-500/50">
+                <div
+                  className="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 transition-all"
+                  style={{ width: `${greenRoomMeter}%` }}
+                />
+              </div>
+              <span className="text-cyan-300 font-bold">{Math.round(greenRoomMeter)}%</span>
+            </div>
 
-          <div className="px-3 py-1.5 rounded-lg bg-slate-950/90 border border-slate-700 font-mono text-xs text-white backdrop-blur-sm flex items-center gap-1.5">
-            <Trophy className="w-3.5 h-3.5 text-amber-400" />
-            <span>SCORE: <span className="text-amber-400 font-bold">{score}</span></span>
+            {/* OC Local Respect Meter */}
+            <div className="px-3 py-1 rounded-lg bg-slate-950/85 border border-emerald-500/40 flex items-center gap-2 text-emerald-200">
+              <span>LOCAL RESPECT:</span>
+              <div className="w-20 h-2.5 bg-slate-800 rounded-full overflow-hidden border border-emerald-500/50">
+                <div
+                  className={`h-full transition-all ${
+                    localRespect >= 80 ? 'bg-emerald-400' : 'bg-amber-400'
+                  }`}
+                  style={{ width: `${localRespect}%` }}
+                />
+              </div>
+              <span className="font-bold">
+                {localRespect}% {localRespect >= 80 ? '🤙 VIP' : ''}
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Pro Companion / Wildlife / WSL Judge Cheer */}
       {activeCheer && (
-        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 px-4 py-2 rounded-2xl bg-slate-950/95 border border-cyan-400 text-cyan-200 font-mono text-xs flex items-center gap-2 shadow-glow-ice animate-bounce">
-          <Sparkles className="w-4 h-4 text-amber-400" />
+        <div className="absolute top-24 left-1/2 -translate-x-1/2 z-30 px-4 py-2 rounded-2xl bg-slate-950/95 border border-cyan-400 text-cyan-200 font-mono text-xs flex items-center gap-2 shadow-glow-ice animate-bounce max-w-xl text-center">
+          <Sparkles className="w-4 h-4 text-amber-400 flex-shrink-0" />
           <span>{activeCheer}</span>
         </div>
       )}
 
       {inBarrel && (
-        <div className="absolute top-28 left-1/2 -translate-x-1/2 z-30 px-4 py-1.5 rounded-full bg-cyan-500/90 text-slate-950 font-mono font-black text-xs uppercase tracking-widest shadow-lg">
-          🌊 DEEP IN THE GREEN ROOM BARREL! +TUBE BONUS! 🌊
+        <div className="absolute top-36 left-1/2 -translate-x-1/2 z-30 px-4 py-1.5 rounded-full bg-cyan-500/90 text-slate-950 font-mono font-black text-xs uppercase tracking-widest shadow-lg">
+          🌊 DEEP IN THE GREEN ROOM BARREL! HOLD &uarr;/W TO STALL IN THE TUBE! 🌊
         </div>
       )}
 
       {yetiRef.current.active && (
-        <div className="absolute top-16 right-6 z-20 px-3 py-1 rounded-full bg-rose-950/90 border border-rose-500 text-rose-200 font-mono text-xs animate-pulse">
+        <div className="absolute top-24 right-6 z-20 px-3 py-1 rounded-full bg-rose-950/90 border border-rose-500 text-rose-200 font-mono text-xs animate-pulse">
           🦈 &quot;THE LANDLORD&quot; SHARK ALERT &bull; {yetiDistance}M BEHIND!
         </div>
       )}
@@ -469,6 +649,32 @@ export const BrightonSkiFree: React.FC<Props> = ({
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 px-6 py-3 rounded-2xl bg-slate-950/95 border border-rose-500 text-white font-mono text-center space-y-1 shadow-2xl animate-bounce">
           <div className="text-rose-400 font-bold text-lg">OVER THE FALLS! WIPEOUT! 🌊💥</div>
           <div className="text-xs text-slate-300">Duck-diving the whitewater and popping back up...</div>
+        </div>
+      )}
+
+      {/* WSL FINALS COBBLESTONE PODIUM CHAMPION MODAL */}
+      {showPodiumModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4">
+          <div className="max-w-lg w-full rounded-2xl bg-slate-950 border-2 border-amber-400 p-6 text-center space-y-4 shadow-2xl">
+            <div className="text-5xl">🏆🍾🏄‍♂️🌊</div>
+            <div className="text-xs font-mono uppercase tracking-widest text-amber-400 font-bold">
+              Lower Trestles Cobblestone Podium &bull; San Clemente, CA
+            </div>
+            <h2 className="text-2xl font-black text-white">
+              WSL FINALS WORLD CHAMPION CROWNED!
+            </h2>
+            <p className="text-xs text-slate-300 font-mono leading-relaxed">
+              You dropped a massive <strong className="text-emerald-400">{bestTwoWaveTotal.toFixed(2)} / 20.00</strong> two-wave heat total ({topWaves[0]?.toFixed(2)} + {topWaves[1]?.toFixed(2)}) to defeat {rivalName} ({rivalTwoWaveTotal.toFixed(2)}) in front of thousands of roaring fans on the beach!
+            </p>
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                onClick={() => setShowPodiumModal(false)}
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-black font-mono text-xs uppercase cursor-pointer shadow-lg"
+              >
+                Keep Shredding Victory Lap! 🤙
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -481,44 +687,81 @@ export const BrightonSkiFree: React.FC<Props> = ({
 
       <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 text-[11px] font-mono text-cyan-100 bg-slate-950/85 border border-slate-700 px-4 py-1 rounded-full backdrop-blur-xs flex items-center gap-2 whitespace-nowrap">
         <Waves className="w-3.5 h-3.5 text-cyan-400" />
-        <span>Steer: &larr; &rarr; / A-D &bull; Pump Down-the-Line: &darr; / S &bull; Stall for Tube: &uarr; / W &bull; Hit Barrels, Lips, Dolphins 🐬, Turtles 🐢 &amp; Shells 🐚!</span>
+        <span>
+          Steer: &larr;&rarr;/A-D &bull; Pump: &darr;/S &bull; Stall in Tube: &uarr;/W &bull; Shaka Locals: G &bull; Jet-Ski: J &bull; Dist: {distance}m
+        </span>
       </div>
     </div>
   )
 }
 
-function drawOceanObstacle(ctx: CanvasRenderingContext2D, obs: SurfObstacle, spotId: SurfSpotId) {
+function drawOceanObstacle(
+  ctx: CanvasRenderingContext2D,
+  obs: SurfObstacle,
+  spotId: SurfSpotId,
+  localRespect: number
+) {
   ctx.save()
   ctx.translate(obs.x, obs.y)
 
   if (obs.type === 'local_surfer') {
-    // Salty Local Surfer in the Lineup!
+    const isFriendly = localRespect >= 80
     ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'
     ctx.beginPath()
     ctx.ellipse(0, 6, 15, 5, 0, 0, Math.PI * 2)
     ctx.fill()
 
     // Local's surfboard
-    ctx.fillStyle = '#f43f5e'
+    ctx.fillStyle = isFriendly ? '#10b981' : '#f43f5e'
     ctx.beginPath()
     ctx.ellipse(0, 4, 14, 4.5, 0, 0, Math.PI * 2)
     ctx.fill()
 
-    // Local in black wetsuit
+    // Local in wetsuit
     ctx.fillStyle = '#0f172a'
     ctx.beginPath()
     ctx.arc(0, -4, 6, 0, Math.PI * 2)
     ctx.fill()
 
-    // Warning badge
-    ctx.fillStyle = 'rgba(127, 29, 29, 0.9)'
-    ctx.fillRect(-30, -22, 60, 12)
-    ctx.fillStyle = '#fca5a5'
+    // Speech bubble / Priority badge
+    ctx.fillStyle = isFriendly ? 'rgba(6, 78, 59, 0.92)' : 'rgba(127, 29, 29, 0.92)'
+    ctx.fillRect(-44, -24, 88, 13)
+    ctx.fillStyle = isFriendly ? '#6ee7b7' : '#fca5a5'
     ctx.font = 'bold 7px monospace'
     ctx.textAlign = 'center'
-    ctx.fillText(spotId === 'trestles_wsl' ? 'WSL PRIORITY' : 'LOCAL!', 0, -13)
+    ctx.fillText(
+      isFriendly
+        ? '🤙 GO! YOUR WAVE!'
+        : obs.localQuote || (spotId === 'trestles_wsl' ? 'WSL PRIORITY' : 'LOCAL!'),
+      0,
+      -15
+    )
+  } else if (obs.type === 'peeling_wall') {
+    // Lateral Peeling Left/Right Wave Wall with Green Room Curtain!
+    const isRight = obs.peelDirection !== 'left'
+    const wallGrad = ctx.createLinearGradient(-55, -16, 55, 16)
+    wallGrad.addColorStop(0, isRight ? '#ecfeff' : '#0284c7')
+    wallGrad.addColorStop(0.5, '#06b6d4')
+    wallGrad.addColorStop(1, isRight ? '#0284c7' : '#ecfeff')
+
+    ctx.fillStyle = wallGrad
+    ctx.beginPath()
+    ctx.roundRect(-55, -14, 110, 28, 10)
+    ctx.fill()
+
+    // Foaming Curling Lip Crest
+    ctx.strokeStyle = '#ffffff'
+    ctx.lineWidth = 4
+    ctx.beginPath()
+    ctx.moveTo(-52, -12)
+    ctx.lineTo(52, -12)
+    ctx.stroke()
+
+    ctx.fillStyle = '#083344'
+    ctx.font = 'bold 8px monospace'
+    ctx.textAlign = 'center'
+    ctx.fillText(isRight ? 'PEELING RIGHT WALL 🌊→' : '←🌊 PEELING LEFT WALL', 0, 4)
   } else if (obs.type === 'kelp_rock') {
-    // Boil Rock / Kelp Paddy / Pier Piling
     ctx.fillStyle = 'rgba(255, 255, 255, 0.65)'
     ctx.beginPath()
     ctx.arc(0, 0, 14, 0, Math.PI * 2)
@@ -529,7 +772,6 @@ function drawOceanObstacle(ctx: CanvasRenderingContext2D, obs: SurfObstacle, spo
     ctx.arc(0, 0, 9, 0, Math.PI * 2)
     ctx.fill()
   } else if (obs.type === 'wave_lip') {
-    // Foaming Closeout Wave Lip Ramp to Boost Airs & El Rollos!
     ctx.fillStyle = '#0284c7'
     ctx.beginPath()
     ctx.roundRect(-22, -8, 44, 16, 6)
@@ -543,7 +785,6 @@ function drawOceanObstacle(ctx: CanvasRenderingContext2D, obs: SurfObstacle, spo
     ctx.textAlign = 'center'
     ctx.fillText('AIR LIP 🚀', 0, 5)
   } else if (obs.type === 'barrel_tube') {
-    // Hollow Turquoise Barrel / Tube Section!
     const tubeGrad = ctx.createLinearGradient(-28, -14, 28, 14)
     tubeGrad.addColorStop(0, '#0891b2')
     tubeGrad.addColorStop(0.5, '#22d3ee')
@@ -564,7 +805,6 @@ function drawOceanObstacle(ctx: CanvasRenderingContext2D, obs: SurfObstacle, spo
     ctx.textAlign = 'center'
     ctx.fillText('TUBE 🌊', 0, 2)
   } else if (obs.type === 'dolphin') {
-    // Jumping Pacific Dolphin!
     ctx.fillStyle = 'rgba(186, 230, 253, 0.6)'
     ctx.beginPath()
     ctx.arc(0, 2, 14, 0, Math.PI * 2)
@@ -573,7 +813,6 @@ function drawOceanObstacle(ctx: CanvasRenderingContext2D, obs: SurfObstacle, spo
     ctx.textAlign = 'center'
     ctx.fillText('🐬', 0, 6)
   } else if (obs.type === 'sea_turtle') {
-    // Sea Turtle (Honu)!
     ctx.fillStyle = 'rgba(167, 243, 208, 0.55)'
     ctx.beginPath()
     ctx.arc(0, 2, 13, 0, Math.PI * 2)
@@ -582,13 +821,11 @@ function drawOceanObstacle(ctx: CanvasRenderingContext2D, obs: SurfObstacle, spo
     ctx.textAlign = 'center'
     ctx.fillText('🐢', 0, 6)
   } else if (obs.type === 'pelican_flock') {
-    // Swooping California Pelican / Seabird!
     ctx.font = '18px sans-serif'
     ctx.textAlign = 'center'
     ctx.fillText('🐦', -8, 0)
     ctx.fillText('🐦', 10, -6)
   } else if (obs.type === 'seashell_reef') {
-    // Sparkling Seashell Treasure!
     ctx.fillStyle = 'rgba(254, 240, 138, 0.75)'
     ctx.beginPath()
     ctx.arc(0, 0, 14, 0, Math.PI * 2)
@@ -619,7 +856,6 @@ function drawSurferOrBoogieBoarder(
   ctx.translate(x, y)
 
   if (crashed) {
-    // Whitewater wipeout foam explosion
     ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'
     for (let i = 0; i < 8; i++) {
       ctx.beginPath()
@@ -642,7 +878,6 @@ function drawSurferOrBoogieBoarder(
     ctx.rotate(angle)
   }
 
-  // Wake spray behind board
   ctx.fillStyle = 'rgba(255, 255, 255, 0.78)'
   ctx.beginPath()
   ctx.moveTo(-6, -16)
@@ -661,7 +896,6 @@ function drawSurferOrBoogieBoarder(
   }
 
   if (craftType === 'boogie') {
-    // 1. PRONE / DROP-KNEE BOOGIE BOARD (Bodyboard + Viper Swimfins!)
     ctx.beginPath()
     ctx.roundRect(-9, -18, 18, 34, 4)
     ctx.fillStyle = board.accentColor
@@ -670,17 +904,14 @@ function drawSurferOrBoogieBoarder(
     ctx.lineWidth = 1.5
     ctx.stroke()
 
-    // Slick rail stripe
     ctx.fillStyle = board.topGraphicColor
     ctx.fillRect(-6, -14, 12, 26)
 
-    // Viper Swimfins kicking in the water behind the tail!
     const kick = Math.sin(Date.now() * 0.025) * 3
     ctx.fillStyle = '#facc15'
     ctx.fillRect(-7, -26 + kick, 5, 9)
     ctx.fillRect(2, -26 - kick, 5, 9)
 
-    // Bodyboarder torso & head gripping the nose
     ctx.fillStyle = rider.accentColor
     ctx.fillRect(-6, -10, 12, 16)
     ctx.fillStyle = '#0f172a'
@@ -688,9 +919,8 @@ function drawSurferOrBoogieBoarder(
     ctx.arc(0, 8, 5.5, 0, Math.PI * 2)
     ctx.fill()
   } else {
-    // 2. STAND-UP SURFBOARD (Pointed nose, stringer, thruster fins)
     ctx.beginPath()
-    ctx.moveTo(0, 24) // Pointed surfboard nose heading down screen
+    ctx.moveTo(0, 24)
     ctx.quadraticCurveTo(9, 6, 7, -20)
     ctx.lineTo(-7, -20)
     ctx.quadraticCurveTo(-9, 6, 0, 24)
@@ -701,7 +931,6 @@ function drawSurferOrBoogieBoarder(
     ctx.lineWidth = 1.2
     ctx.stroke()
 
-    // Center wood stringer & tail traction pad
     ctx.strokeStyle = 'rgba(120, 53, 15, 0.65)'
     ctx.lineWidth = 1
     ctx.beginPath()
@@ -712,7 +941,6 @@ function drawSurferOrBoogieBoarder(
     ctx.fillStyle = '#0f172a'
     ctx.fillRect(-4, -17, 8, 7)
 
-    // Surfer in wetsuit / WSL jersey carving the wave
     ctx.fillStyle = '#0f172a'
     ctx.fillRect(-4, -7, 8, 14)
 
@@ -721,13 +949,11 @@ function drawSurferOrBoogieBoarder(
     ctx.arc(0, -2, 7, 0, Math.PI * 2)
     ctx.fill()
 
-    // Sun-bleached hair / surf hat
     ctx.fillStyle = '#fde047'
     ctx.beginPath()
     ctx.arc(0, -6, 5, 0, Math.PI * 2)
     ctx.fill()
 
-    // Arms styling out
     ctx.strokeStyle = rider.accentColor
     ctx.lineWidth = 2.5
     ctx.beginPath()
@@ -738,7 +964,6 @@ function drawSurferOrBoogieBoarder(
     ctx.stroke()
   }
 
-  // Hollow water curtain arch if currently inside a barrel!
   if (inBarrel) {
     ctx.strokeStyle = 'rgba(103, 232, 249, 0.85)'
     ctx.lineWidth = 6
@@ -754,19 +979,16 @@ function drawLandlordShark(ctx: CanvasRenderingContext2D, x: number, y: number) 
   ctx.save()
   ctx.translate(x, y)
 
-  // Whitewater wake around dorsal fin
   ctx.fillStyle = 'rgba(255, 255, 255, 0.75)'
   ctx.beginPath()
   ctx.arc(0, 0, 22, 0, Math.PI * 2)
   ctx.fill()
 
-  // Great White Shark silhouette ("The Landlord")
   ctx.fillStyle = '#475569'
   ctx.beginPath()
   ctx.ellipse(0, 0, 12, 24, 0, 0, Math.PI * 2)
   ctx.fill()
 
-  // Dorsal fin
   ctx.fillStyle = '#1e293b'
   ctx.beginPath()
   ctx.moveTo(0, -10)
@@ -793,34 +1015,28 @@ function drawBeachAndPierShoreline(
 
   ctx.save()
 
-  // Foaming whitewater shorebreak edge
   const foamWave = Math.sin(Date.now() * 0.004) * 6
   ctx.fillStyle = '#bae6fd'
   ctx.fillRect(beachX - 14 + foamWave, 0, 18, height)
   ctx.fillStyle = '#ffffff'
   ctx.fillRect(beachX - 4 + foamWave, 0, 6, height)
 
-  // Golden Sandy Beach (and Trestles Cobblestones)
   ctx.fillStyle = '#fde68a'
   ctx.fillRect(beachX, 0, width - beachX, height)
 
-  // Scrolling Beach Elements: Sunbathers on Towels, Beach Umbrellas, Kids in Ocean, Seashells, Lifeguard Towers & WSL Fans!
   const itemSpacing = 220
   const scrollOffset = (distCounter * 2.5) % itemSpacing
 
   for (let by = -140 + scrollOffset; by < height + 140; by += itemSpacing) {
-    // 1. Kids playing in the shallow shorebreak & building sandcastles
     ctx.font = '15px sans-serif'
     ctx.textAlign = 'center'
     ctx.fillText('🧒', beachX - 6, by + 20)
     ctx.fillText('🏖️', beachX + 18, by + 24)
 
-    // 2. Seashells & Starfish on the wet sand
     ctx.font = '13px sans-serif'
     ctx.fillText('🐚', beachX + 12, by + 65)
     ctx.fillText('⭐', beachX + 26, by + 150)
 
-    // 3. Sunbathers on Colorful Towels under Beach Umbrellas
     ctx.fillStyle = '#38bdf8'
     ctx.fillRect(beachX + 38, by + 40, 24, 12)
     ctx.font = '13px sans-serif'
@@ -834,7 +1050,6 @@ function drawBeachAndPierShoreline(
     ctx.lineWidth = 1.5
     ctx.stroke()
 
-    // 4. California Lifeguard Tower
     ctx.fillStyle = '#f8fafc'
     ctx.fillRect(beachX + 42, by + 95, 34, 24)
     ctx.strokeStyle = '#0284c7'
@@ -846,7 +1061,6 @@ function drawBeachAndPierShoreline(
     ctx.font = '12px sans-serif'
     ctx.fillText('🛟', beachX + 59, by + 106)
 
-    // 5. Cheering WSL Fans / Pier Crowd
     ctx.fillStyle = '#0f172a'
     ctx.fillRect(beachX + 24, by + 165, 96, 26)
     ctx.strokeStyle = spotId === 'trestles_wsl' ? '#facc15' : '#22d3ee'

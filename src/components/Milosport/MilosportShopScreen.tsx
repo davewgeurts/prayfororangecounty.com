@@ -26,6 +26,7 @@ import {
 } from 'lucide-react'
 import { WaxBenchMiniGame } from './WaxBenchMiniGame'
 import { DiscountPassDesk } from './DiscountPassDesk'
+import { useOceanBuoyFeed } from '../../utils/oceanBuoyFeed'
 
 interface Props {
   selectedBoardId: string;
@@ -68,6 +69,7 @@ export const MilosportShopScreen: React.FC<Props> = ({
   onGoTo711,
   onGoToX96
 }) => {
+  const buoy = useOceanBuoyFeed()
   const [activeTab, setActiveTab] = useState<'gear' | 'riders' | 'wax' | 'passes' | 'gallery' | 'rig'>('gear')
   const [boardBrandFilter, setBoardBrandFilter] = useState<string>('all')
   const [riderCategoryFilter, setRiderCategoryFilter] = useState<string>('all')
@@ -101,12 +103,21 @@ export const MilosportShopScreen: React.FC<Props> = ({
             🌊
           </div>
           <div className="min-w-0">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-sm sm:text-lg font-black tracking-wider text-white uppercase flex items-center gap-2">
                 SURF &amp; PADDLE<span className="hidden sm:inline">&nbsp;&bull; LAGUNA BEACH</span>
               </h1>
               <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-mono bg-amber-950 border border-amber-500 text-amber-300 font-bold">
                 BY THE TACO STAND 🌮
+              </span>
+              <span
+                className="hidden md:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-cyan-950 border border-cyan-500/70 text-cyan-200 font-bold"
+                title={`${buoy.stationId}: ${buoy.stationName}`}
+              >
+                <Waves className="w-3 h-3 text-cyan-400" />
+                <span>
+                  {buoy.stationId}: {buoy.waveHeightFt}–{buoy.waveMaxFt}ft @ {buoy.swellPeriodSec}s {buoy.swellCompass} &bull; {buoy.waterTempF}°F &bull; Tide {buoy.tideStage}
+                </span>
               </span>
             </div>
             <div className="flex items-center gap-2 text-[11px] sm:text-xs font-mono text-cyan-200/80 min-w-0">

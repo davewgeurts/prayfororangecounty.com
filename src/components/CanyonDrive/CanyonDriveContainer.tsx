@@ -13,6 +13,7 @@ import { CanyonAudioEngine, type RadioStatus } from '../../utils/audioEngine'
 import { TopDownView } from './TopDownView'
 import { CockpitView } from './CockpitView'
 import { SilentRockCard } from './SilentRockCard'
+import { ShorebreakSessionModal } from './ShorebreakSessionModal'
 import { BrightonArrivalCard } from './BrightonArrivalCard'
 import { BrightonSkiFree } from '../SkiFree/BrightonSkiFree'
 import { MilosportShopScreen } from '../Milosport/MilosportShopScreen'
@@ -25,6 +26,7 @@ import { WhaleRoundaboutModal } from '../CityStops/WhaleRoundaboutModal'
 import { SevenElevenGasModal } from '../CityStops/SevenElevenGasModal'
 import { X96StudioModal } from '../CityStops/X96StudioModal'
 import { SNOWBOARDS_LIST, RIDERS_LIST } from '../../data/snowboardGear'
+import { useOceanBuoyFeed } from '../../utils/oceanBuoyFeed'
 import confetti from 'canvas-confetti'
 import {
   Radio,
@@ -57,11 +59,13 @@ const RANDOM_COP_REASONS = [
 ]
 
 export const CanyonDriveContainer: React.FC = () => {
+  const buoy = useOceanBuoyFeed()
   const [phase, setPhase] = useState<EXPERIENCE_PHASE>(EXPERIENCE_PHASE.MILOSPORT_SHOP)
   const [selectedBoardId, setSelectedBoardId] = useState<string>('forum-destroyer')
   const [selectedRiderId, setSelectedRiderId] = useState<string>('jp-walker')
   const [selectedSpotId, setSelectedSpotId] = useState<SurfSpotId>('trestles_wsl')
   const [showSpotSelectorModal, setShowSpotSelectorModal] = useState<boolean>(false)
+  const [shorebreakSpot, setShorebreakSpot] = useState<'thousand_steps' | 'treasure_island' | null>(null)
   const [cameraView, setCameraView] = useState<CAMERA_VIEW>(CAMERA_VIEW.GTA_TOP_DOWN)
   const [driveMode, setDriveMode] = useState<DRIVE_MODE>(DRIVE_MODE.AUTOPILOT)
   const [radioStatus, setRadioStatus] = useState<RadioStatus>(() => CanyonAudioEngine.get().getRadioStatus())
@@ -526,6 +530,7 @@ export const CanyonDriveContainer: React.FC = () => {
   const currentLandmark = CanyonRoute.getCurrentLandmark(carState.distanceMiles)
   const isSilentZone = CanyonRoute.isSilentRockZone(carState.distanceMiles)
   const atBrighton = carState.distanceMiles >= 16.3
+  const nearTreasureIsland = carState.distanceMiles >= 2.8 && carState.distanceMiles <= 3.8
   const nearDanaPoint = carState.distanceMiles >= 9.1 && carState.distanceMiles <= 10.2
   const nearScPier = carState.distanceMiles >= 13.1 && carState.distanceMiles <= 14.2
 
@@ -677,8 +682,14 @@ export const CanyonDriveContainer: React.FC = () => {
             <span>MILE: <strong className="text-cyan-400 font-bold">{carState.distanceMiles.toFixed(1)}</strong> / 16.5</span>
           </div>
 
-          <div className="flex items-center gap-1.5 text-slate-300">
-            <span>SWELL: <strong className="text-amber-400 font-bold">6-8 FT @ 17s</strong></span>
+          <div
+            className="flex items-center gap-1.5 text-slate-300"
+            title={`${buoy.stationName}: ${buoy.waveHeightFt}–${buoy.waveMaxFt}ft @ ${buoy.swellPeriodSec}s ${buoy.swellCompass} • Water ${buoy.waterTempF}°F • Tide ${buoy.tideStage}`}
+          >
+            <span>
+              BUOY: <strong className="text-amber-400 font-bold">{buoy.waveHeightFt}–{buoy.waveMaxFt}FT @ {buoy.swellPeriodSec}s {buoy.swellCompass}</strong>
+            </span>
+            <span className="hidden xl:inline text-cyan-300">({buoy.tideStage})</span>
           </div>
 
           <div className="flex items-center gap-1.5 text-slate-300">
@@ -734,6 +745,17 @@ export const CanyonDriveContainer: React.FC = () => {
           >
             <Waves className="w-3.5 h-3.5" />
             <span>SURF SPOTS</span>
+          </button>
+
+          {/* 1000 Steps & Treasure Island Montage Shorebreak Mini-Session Button */}
+          <button
+            data-closes-menu
+            onClick={() => setShorebreakSpot('thousand_steps')}
+            className="px-2.5 py-1.5 rounded-lg bg-teal-950/90 border border-teal-500 hover:border-teal-300 text-teal-200 font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+            title="Pull over at 1000 Steps Beach (219 Cliff Stairs) or Treasure Island Montage for a Shorebreak Boogie/Surf Session!"
+          >
+            <span>🪜</span>
+            <span>1000 STEPS</span>
           </button>
 
           {/* The Taco Stand Button */}
@@ -936,8 +958,29 @@ export const CanyonDriveContainer: React.FC = () => {
           <CockpitView carState={carState} />
         )}
 
+        {/* QUICK PADDLE-OUT BANNER WHEN PASSING TREASURE ISLAND BY THE MONTAGE (Mile 2.8 - 3.8) */}
+        {nearTreasureIsland && !shorebreakSpot && !showSpotSelectorModal && !isSilentZone && (
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 max-w-xl w-[92%] bg-slate-950/92 border border-teal-400 rounded-2xl p-4 shadow-2xl backdrop-blur-md flex items-center justify-between gap-4 animate-in fade-in slide-in-from-bottom-4">
+            <div className="text-xs font-mono">
+              <div className="text-teal-300 font-bold uppercase flex items-center gap-1.5">
+                <Waves className="w-4 h-4 text-teal-400" />
+                <span>Passing Treasure Island by the Montage (Mile 3.2)</span>
+              </div>
+              <div className="text-slate-300 text-[11px] mt-0.5">
+                Turquoise keyhole arch &amp; hollow shorebreak wedges! Pull over to Boogie/Surf the cove or keep cruising to 1000 Steps &amp; Trestles.
+              </div>
+            </div>
+            <button
+              onClick={() => setShorebreakSpot('treasure_island')}
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-teal-400 to-cyan-400 hover:from-teal-300 hover:to-cyan-300 text-slate-950 font-black text-xs uppercase whitespace-nowrap cursor-pointer shadow-md"
+            >
+              Shred Montage 🏖️
+            </button>
+          </div>
+        )}
+
         {/* QUICK PADDLE-OUT BANNER WHEN PASSING DANA POINT OR SAN CLEMENTE PIER */}
-        {(nearDanaPoint || nearScPier) && !showSpotSelectorModal && !isSilentZone && (
+        {(nearDanaPoint || nearScPier) && !shorebreakSpot && !showSpotSelectorModal && !isSilentZone && (
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 max-w-xl w-[92%] bg-slate-950/90 border border-cyan-400 rounded-2xl p-4 shadow-2xl backdrop-blur-md flex items-center justify-between gap-4 animate-in fade-in slide-in-from-bottom-4">
             <div className="text-xs font-mono">
               <div className="text-cyan-300 font-bold uppercase flex items-center gap-1.5">
@@ -1085,11 +1128,37 @@ export const CanyonDriveContainer: React.FC = () => {
           />
         )}
 
+        {/* 1000 STEPS BEACH & TREASURE ISLAND SHOREBREAK MINI-SESSION MODAL */}
+        {shorebreakSpot && (
+          <ShorebreakSessionModal
+            initialSpot={shorebreakSpot}
+            craftType={activeBoard.craftType}
+            riderName={activeRider.name}
+            boardName={activeBoard.name}
+            buoy={buoy}
+            onFinishSession={(earnedPrayers) => {
+              setShorebreakSpot(null)
+              setCarState(prev => {
+                const next = {
+                  ...prev,
+                  prayersCount: prev.prayersCount + earnedPrayers,
+                  speed: 45
+                }
+                carStateRef.current = next
+                return next
+              })
+            }}
+            onClose={() => setShorebreakSpot(null)}
+          />
+        )}
+
         {/* 1000 STEPS BEACH & TREASURE ISLAND OVERLOOK CARD (Mile 4.25 - 4.75) */}
-        {isSilentZone && (
+        {isSilentZone && !shorebreakSpot && (
           <SilentRockCard
             onOfferPrayer={handleOfferPrayer}
+            onOpenShorebreakSession={(spot) => setShorebreakSpot(spot)}
             prayersCount={carState.prayersCount}
+            buoy={buoy}
           />
         )}
 
