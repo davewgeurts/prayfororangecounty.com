@@ -1,0 +1,42 @@
+{
+  "name": "prayfortheocean",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build && mkdir -p dist/dashboard dist/surf dist/trestles dist/shrine && cp dist/index.html dist/dashboard/index.html && cp dist/index.html dist/surf/index.html && cp dist/index.html dist/trestles/index.html && cp dist/index.html dist/shrine/index.html",
+    "typecheck": "tsc -b",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down",
+    "deploy": "npm run build && aws s3 sync dist/ s3://prayfororangecounty.com/ --delete --region us-west-2 && aws s3 cp dist/index.html s3://prayfororangecounty.com/index.html --cache-control 'public, max-age=0, must-revalidate' --content-type 'text/html' --region us-west-2"
+  },
+  "dependencies": {
+    "@davewgeurts/rivpak": "file:.yalc/@davewgeurts/rivpak",
+    "@types/matter-js": "^0.19.8",
+    "canvas-confetti": "^1.9.4",
+    "date-fns": "^4.4.0",
+    "lucide-react": "^1.55.0",
+    "matter-js": "^0.20.0",
+    "pixi.js": "^8.22.0",
+    "popmotion": "^11.0.5",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "socket.io-client": "^4.8.4"
+  },
+  "devDependencies": {
+    "@types/canvas-confetti": "^1.9.0",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "autoprefixer": "^10.6.1",
+    "oxlint": "^1.81.0",
+    "postcss": "^8.5.29",
+    "tailwindcss": "^3.4.17",
+    "typescript": "~6.0.2",
+    "vite": "^8.3.0"
+  }
+}
