@@ -2,19 +2,40 @@
   <defs>
     <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#0284c7" />
-      <stop offset="68%" stop-color="#06b6d4" />
+      <stop offset="70%" stop-color="#38bdf8" />
       <stop offset="100%" stop-color="#fde68a" />
     </linearGradient>
   </defs>
   <rect width="800" height="450" fill="url(#sky)" />
-  <circle cx="670" cy="95" r="52" fill="#fef08a" opacity="0.9" />
-  <path d="M0 280 Q200 250 400 280 T800 270 L800 360 L0 360 Z" fill="#0284c7" opacity="0.55" />
-  <path d="M0 315 Q220 290 430 320 T800 305 L800 390 L0 390 Z" fill="#67e8f9" opacity="0.65" />
-  <path d="M0 320 Q220 295 430 325 T800 310" fill="none" stroke="#ffffff" stroke-width="6" opacity="0.9" />
-  <rect x="0" y="355" width="800" height="95" fill="#fde68a" opacity="0.88" />
-  <rect x="40" y="38" width="440" height="32" rx="16" fill="#0f172a" opacity="0.85" />
-  <text x="60" y="59" fill="#67e8f9" font-family="monospace" font-weight="bold" font-size="14">MILE 0.0 • 699 S COAST HWY, LAGUNA BEACH</text>
-  <text x="400" y="185" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-weight="900" font-size="34" letter-spacing="1">SURF & PADDLE + THE TACO STAND</text>
-  <text x="400" y="225" text-anchor="middle" fill="#e0f2fe" font-family="monospace" font-weight="bold" font-size="15">Custom Surfboards • Boogie Boards • Sticky Bumps Wax • Al Pastor Next Door</text>
-  <text x="400" y="295" text-anchor="middle" font-size="44">🏄‍♂️ 🌊 🌮 🌴 🤙</text>
+  <circle cx="680" cy="90" r="46" fill="#fef08a" opacity="0.9" />
+  <path d="M0 285 Q200 260 400 285 T800 275 L800 360 L0 360 Z" fill="#0284c7" opacity="0.55" />
+  <path d="M0 320 Q220 298 430 322 T800 310 L800 390 L0 390 Z" fill="#67e8f9" opacity="0.65" />
+  
+      <!-- Laguna Hills & Palms -->
+      <path d="M0 260 Q180 180 380 245 T800 220 L800 320 L0 320 Z" fill="#065f46" opacity="0.45"/>
+      <!-- Surf & Paddle Shop Building -->
+      <rect x="90" y="210" width="290" height="135" rx="8" fill="#0f172a" stroke="#38bdf8" stroke-width="3"/>
+      <rect x="105" y="222" width="260" height="32" rx="4" fill="#0284c7"/>
+      <text x="235" y="243" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-weight="900" font-size="16">SURF &amp; PADDLE LAGUNA</text>
+      <!-- Surfboard & Boogie Rack in front of shop -->
+      <ellipse cx="140" cy="305" rx="9" ry="38" fill="#06b6d4" stroke="#fff" stroke-width="2"/>
+      <ellipse cx="165" cy="308" rx="9" ry="35" fill="#f97316" stroke="#fff" stroke-width="2"/>
+      <ellipse cx="190" cy="304" rx="10" ry="39" fill="#ec4899" stroke="#fff" stroke-width="2"/>
+      <rect x="215" y="285" width="22" height="48" rx="6" fill="#eab308" stroke="#fff" stroke-width="2"/>
+      <rect x="245" y="287" width="22" height="46" rx="6" fill="#10b981" stroke="#fff" stroke-width="2"/>
+      <!-- The Taco Stand Next Door -->
+      <rect x="420" y="215" width="290" height="130" rx="8" fill="#7c2d12" stroke="#fb923c" stroke-width="3"/>
+      <rect x="435" y="225" width="260" height="32" rx="4" fill="#ea580c"/>
+      <text x="565" y="246" text-anchor="middle" fill="#fffbeb" font-family="sans-serif" font-weight="900" font-size="16">THE TACO STAND • AL PASTOR</text>
+      <circle cx="510" cy="295" r="18" fill="#f97316"/>
+      <rect x="550" y="275" width="120" height="45" rx="6" fill="#fef3c7"/>
+      <text x="610" y="303" text-anchor="middle" fill="#9a3412" font-family="monospace" font-weight="bold" font-size="13">TROMPO &amp; CHURROS</text>
+    
+  <rect x="0" y="345" width="800" height="105" fill="#fde68a" opacity="0.92" />
+  <rect x="40" y="28" width="460" height="30" rx="15" fill="#0f172a" opacity="0.85" />
+  <text x="60" y="48" fill="#67e8f9" font-family="monospace" font-weight="bold" font-size="13">MILE 0.0 • 699 S COAST HWY, LAGUNA BEACH</text>
+  <rect x="90" y="95" width="620" height="92" rx="14" fill="#0f172a" opacity="0.72" stroke="#67e8f9" stroke-width="2" />
+  <text x="400" y="138" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-weight="900" font-size="30" letter-spacing="1">SURF &amp; PADDLE + THE TACO STAND</text>
+  <text x="400" y="170" text-anchor="middle" fill="#e0f2fe" font-family="monospace" font-weight="bold" font-size="13">Custom Surfboards • Boogie Boards • Sticky Bumps Wax • Al Pastor Next Door</text>
+  <text x="400" y="405" text-anchor="middle" fill="#0f172a" font-family="sans-serif" font-weight="900" font-size="16" letter-spacing="2">PRAY FOR THE OCEAN • ORANGE COUNTY SURF PILGRIMAGE</text>
 </svg>

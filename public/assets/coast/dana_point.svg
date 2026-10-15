@@ -2,19 +2,26 @@
   <defs>
     <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#0369a1" />
-      <stop offset="68%" stop-color="#0ea5e9" />
-      <stop offset="100%" stop-color="#fde68a" />
+      <stop offset="70%" stop-color="#0ea5e9" />
+      <stop offset="100%" stop-color="#fde047" />
     </linearGradient>
   </defs>
   <rect width="800" height="450" fill="url(#sky)" />
-  <circle cx="670" cy="95" r="52" fill="#fef08a" opacity="0.9" />
-  <path d="M0 280 Q200 250 400 280 T800 270 L800 360 L0 360 Z" fill="#0284c7" opacity="0.55" />
-  <path d="M0 315 Q220 290 430 320 T800 305 L800 390 L0 390 Z" fill="#67e8f9" opacity="0.65" />
-  <path d="M0 320 Q220 295 430 325 T800 310" fill="none" stroke="#ffffff" stroke-width="6" opacity="0.9" />
-  <rect x="0" y="355" width="800" height="95" fill="#fde68a" opacity="0.88" />
-  <rect x="40" y="38" width="440" height="32" rx="16" fill="#0f172a" opacity="0.85" />
-  <text x="60" y="59" fill="#67e8f9" font-family="monospace" font-weight="bold" font-size="14">MILE 9.5 • KILLER DANA & DOHENY</text>
-  <text x="400" y="185" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-weight="900" font-size="34" letter-spacing="1">DANA POINT HARBOR & DOHENY</text>
-  <text x="400" y="225" text-anchor="middle" fill="#e0f2fe" font-family="monospace" font-weight="bold" font-size="15">Longboard Peelers • Salt Creek Gravels • Green Sea Turtles & Pelicans</text>
-  <text x="400" y="295" text-anchor="middle" font-size="44">⛵ 🐢 🐦 🏄‍♀️ 🌴</text>
+  <circle cx="680" cy="90" r="46" fill="#fef08a" opacity="0.9" />
+  <path d="M0 285 Q200 260 400 285 T800 275 L800 360 L0 360 Z" fill="#0284c7" opacity="0.55" />
+  <path d="M0 320 Q220 298 430 322 T800 310 L800 390 L0 390 Z" fill="#67e8f9" opacity="0.65" />
+  
+      <!-- Dana Point Headlands Bluff -->
+      <path d="M0 235 Q160 200 280 285 L280 345 L0 345 Z" fill="#a16207" opacity="0.85"/>
+      <!-- Peeling Point Waves -->
+      <path d="M270 295 Q450 265 690 295" fill="none" stroke="#ffffff" stroke-width="7"/>
+      <path d="M310 325 Q490 295 740 325" fill="none" stroke="#a5f3fc" stroke-width="5"/>
+    
+  <rect x="0" y="345" width="800" height="105" fill="#fde047" opacity="0.92" />
+  <rect x="40" y="28" width="460" height="30" rx="15" fill="#0f172a" opacity="0.85" />
+  <text x="60" y="48" fill="#bae6fd" font-family="monospace" font-weight="bold" font-size="13">MILE 7.8 • SALT CREEK, HEADLANDS &amp; DOHENY</text>
+  <rect x="90" y="95" width="620" height="92" rx="14" fill="#0f172a" opacity="0.72" stroke="#bae6fd" stroke-width="2" />
+  <text x="400" y="138" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-weight="900" font-size="30" letter-spacing="1">DANA POINT HARBOR &amp; HEADLANDS</text>
+  <text x="400" y="170" text-anchor="middle" fill="#e0f2fe" font-family="monospace" font-weight="bold" font-size="13">Killer Dana Longboard Peelers • Green Sea Turtles • Pelicans &amp; Dolphins</text>
+  <text x="400" y="405" text-anchor="middle" fill="#0f172a" font-family="sans-serif" font-weight="900" font-size="16" letter-spacing="2">PRAY FOR THE OCEAN • ORANGE COUNTY SURF PILGRIMAGE</text>
 </svg>

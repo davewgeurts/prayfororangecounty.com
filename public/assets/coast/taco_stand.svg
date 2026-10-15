@@ -1,20 +1,29 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
   <defs>
     <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#7c2d12" />
-      <stop offset="68%" stop-color="#ea580c" />
+      <stop offset="0%" stop-color="#9a3412" />
+      <stop offset="70%" stop-color="#f97316" />
       <stop offset="100%" stop-color="#fef08a" />
     </linearGradient>
   </defs>
   <rect width="800" height="450" fill="url(#sky)" />
-  <circle cx="670" cy="95" r="52" fill="#fef08a" opacity="0.9" />
-  <path d="M0 280 Q200 250 400 280 T800 270 L800 360 L0 360 Z" fill="#0284c7" opacity="0.55" />
-  <path d="M0 315 Q220 290 430 320 T800 305 L800 390 L0 390 Z" fill="#67e8f9" opacity="0.65" />
-  <path d="M0 320 Q220 295 430 325 T800 310" fill="none" stroke="#ffffff" stroke-width="6" opacity="0.9" />
-  <rect x="0" y="355" width="800" height="95" fill="#fef08a" opacity="0.88" />
-  <rect x="40" y="38" width="440" height="32" rx="16" fill="#0f172a" opacity="0.85" />
-  <text x="60" y="59" fill="#67e8f9" font-family="monospace" font-weight="bold" font-size="14">LAGUNA BEACH • NEXT DOOR FUEL STOP</text>
-  <text x="400" y="185" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-weight="900" font-size="34" letter-spacing="1">THE TACO STAND LAGUNA BEACH</text>
-  <text x="400" y="225" text-anchor="middle" fill="#e0f2fe" font-family="monospace" font-weight="bold" font-size="15">Flame-Grilled Al Pastor Trompo • Carne Asada California Burritos • Fresh Churros</text>
-  <text x="400" y="295" text-anchor="middle" font-size="44">🌮 🌯 🔥 🥑 🥤</text>
+  <circle cx="680" cy="90" r="46" fill="#fef08a" opacity="0.9" />
+  <path d="M0 285 Q200 260 400 285 T800 275 L800 360 L0 360 Z" fill="#0284c7" opacity="0.55" />
+  <path d="M0 320 Q220 298 430 322 T800 310 L800 390 L0 390 Z" fill="#67e8f9" opacity="0.65" />
+  
+      <rect x="140" y="215" width="520" height="130" rx="12" fill="#431407" stroke="#fb923c" stroke-width="3"/>
+      <circle cx="260" cy="280" r="36" fill="#ea580c" stroke="#fde047" stroke-width="3"/>
+      <text x="260" y="286" text-anchor="middle" fill="#fff" font-family="sans-serif" font-weight="bold" font-size="13">AL PASTOR</text>
+      <rect x="330" y="245" width="140" height="70" rx="8" fill="#065f46" stroke="#34d399" stroke-width="2"/>
+      <text x="400" y="285" text-anchor="middle" fill="#ecfdf5" font-family="sans-serif" font-weight="bold" font-size="13">GUAC &amp; HABANERO</text>
+      <rect x="495" y="245" width="140" height="70" rx="8" fill="#b45309" stroke="#fde047" stroke-width="2"/>
+      <text x="565" y="285" text-anchor="middle" fill="#fefce8" font-family="sans-serif" font-weight="bold" font-size="13">BAJA FISH TACO</text>
+    
+  <rect x="0" y="345" width="800" height="105" fill="#fef08a" opacity="0.92" />
+  <rect x="40" y="28" width="460" height="30" rx="15" fill="#0f172a" opacity="0.85" />
+  <text x="60" y="48" fill="#fed7aa" font-family="monospace" font-weight="bold" font-size="13">699 S COAST HWY • NEXT DOOR TO SURF &amp; PADDLE</text>
+  <rect x="90" y="95" width="620" height="92" rx="14" fill="#0f172a" opacity="0.72" stroke="#fed7aa" stroke-width="2" />
+  <text x="400" y="138" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-weight="900" font-size="30" letter-spacing="1">THE TACO STAND LAGUNA BEACH</text>
+  <text x="400" y="170" text-anchor="middle" fill="#e0f2fe" font-family="monospace" font-weight="bold" font-size="13">Sizzling Al Pastor Trompo • Baja Fish Tacos • Carne Asada Fries • Churros</text>
+  <text x="400" y="405" text-anchor="middle" fill="#0f172a" font-family="sans-serif" font-weight="900" font-size="16" letter-spacing="2">PRAY FOR THE OCEAN • ORANGE COUNTY SURF PILGRIMAGE</text>
 </svg>
