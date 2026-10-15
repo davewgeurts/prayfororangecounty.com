@@ -71,7 +71,7 @@ export const MILOSPORT_PHOTOS: MilosportPhoto[] = [
     title: 'Surf & Paddle Laguna Beach + The Taco Stand (699 S Coast Hwy)',
     category: 'parking_lot',
     categoryLabel: 'PCH Storefront (Laguna Beach)',
-    imageUrl: '/assets/milosport/storefront.jpg',
+    imageUrl: '/assets/coast/storefront.svg',
     caption: '699 South Coast Highway in Laguna Beach — Rack of custom surfboards & boogie boards right next to The Taco Stand line.',
     lore: 'Every South Coast dawn patrol starts right here: grab Sticky Bumps wax and a Lost RNF or Morey Boogie at Surf & Paddle, then score two Al Pastor tacos next door.'
   },
@@ -80,7 +80,7 @@ export const MILOSPORT_PHOTOS: MilosportPhoto[] = [
     title: 'The Taco Stand Laguna Beach — Al Pastor Trompo & Salsa Bar',
     category: 'pro_sale',
     categoryLabel: 'Next Door Fuel Stop',
-    imageUrl: '/assets/milosport/pro_sale.jpg',
+    imageUrl: '/assets/coast/taco_stand.svg',
     caption: 'Handmade corn tortillas pressed live in the window, sizzling Al Pastor off the spit, and California burritos before hitting PCH.',
     lore: 'Locals know the move: order the Al Pastor and a Baja fish taco, load up on habanero mango salsa, and eat on the tailgate while checking the Thalia Street surf cam.'
   },
@@ -89,7 +89,7 @@ export const MILOSPORT_PHOTOS: MilosportPhoto[] = [
     title: 'Treasure Island Beach by Montage Laguna Beach',
     category: 'inside_shop',
     categoryLabel: 'Mile 3.2 • Montage Reef & Arch',
-    imageUrl: '/assets/milosport/inside_shop.jpg',
+    imageUrl: '/assets/coast/treasure_island.svg',
     caption: 'Turquoise water, natural stone keyhole arches, tidepools filled with starfish & seashells, and crystal-clear shorebreak.',
     lore: 'Just south of Goff Island and the Montage resort lawns, Treasure Island lights up on south swells with dolphins swimming right through the crystal cove.'
   },
@@ -98,16 +98,25 @@ export const MILOSPORT_PHOTOS: MilosportPhoto[] = [
     title: '1000 Steps Beach (9th Ave Cliff Stairs, South Laguna)',
     category: 'inside_shop',
     categoryLabel: 'Mile 4.5 • Sacred Swell Overlook',
-    imageUrl: '/assets/milosport/shop_interior_boards.jpg',
+    imageUrl: '/assets/coast/thousand_steps.svg',
     caption: '219 steep coastal concrete steps plunging down through sea-grape tunnels to hollow shorebreak barrels and sea caves.',
     lore: 'Laguna bodyboarders, skimboarders, and tube hounds treat 1000 Steps like sacred ground. Pause at the cliff top to read the SSW swell intervals before dropping down.'
+  },
+  {
+    id: 'dana_point',
+    title: 'Dana Point Headlands, Salt Creek & Doheny ("Killer Dana")',
+    category: 'crew',
+    categoryLabel: 'Mile 7.8 • Dana Point Cove',
+    imageUrl: '/assets/coast/dana_point.svg',
+    caption: 'Golden headlands bluffs overlooking green point peelers, green sea turtles by the kelp beds, and sunbathers on the sand.',
+    lore: 'From heavy Salt Creek lefts to mellow Doheny longboard walls where kids play in the whitewater and pelicans glide inches above the swell.'
   },
   {
     id: 'san_clemente_pier',
     title: 'San Clemente Pier Bowl & T-Street Reef',
     category: 'crew',
     categoryLabel: 'Mile 13.5 • Pier & Amtrak Tracks',
-    imageUrl: '/assets/milosport/milo_crew.jpg',
+    imageUrl: '/assets/coast/san_clemente_pier.svg',
     caption: 'The 1,296-foot wooden San Clemente Pier with the Pacific Surfliner train rolling right along the sand.',
     lore: 'Home of the 2% Crew, T-Street reef rights, and punchy Pier Bowl barrels where groms, sea turtles, pelicans, and lifeguards share the sunny lineup.'
   },
@@ -116,7 +125,7 @@ export const MILOSPORT_PHOTOS: MilosportPhoto[] = [
     title: 'Lower Trestles — WSL Championship Tour Finals Arena',
     category: 'crew',
     categoryLabel: 'Mile 16.5 • WSL Finals @ Lowers',
-    imageUrl: '/assets/milosport/first_look.jpg',
+    imageUrl: '/assets/coast/trestles_wsl.svg',
     caption: 'Cobblestone A-frame perfection at San Onofre State Beach packed with thousands of cheering WSL Finals fans on the beach!',
     lore: 'After walking or e-biking down the wetlands trail under I-5, you step onto the sacred cobblestones of Lowers—where World Champions are crowned in front of a roaring beach crowd.'
   }
@@ -687,7 +696,7 @@ export const RIDERS_LIST: RiderPro[] = [
     category: 'local_kids',
     categoryLabel: 'OC Local Grom',
     sponsor: 'Surf & Paddle Laguna Shop Team',
-    sponsorLogoUrl: '/assets/milosport/storefront.jpg',
+    sponsorLogoUrl: '/assets/coast/storefront.svg',
     stance: 'Regular',
     hometown: 'Laguna Beach / San Clemente, CA',
     favoriteTrick: 'Tandem Party Wave Shaka & Pier Piling Shoot',
@@ -714,7 +723,7 @@ export const RIDERS_LIST: RiderPro[] = [
     category: 'local_kids',
     categoryLabel: 'OC Local Grom',
     sponsor: 'Surf & Paddle Shaping Bay',
-    sponsorLogoUrl: '/assets/milosport/storefront.jpg',
+    sponsorLogoUrl: '/assets/coast/storefront.svg',
     stance: 'Goofy',
     hometown: 'Laguna Beach, CA',
     favoriteTrick: 'Soul Arch Tube Ride with Perfect Bead Wax Grip',
@@ -741,7 +750,7 @@ export const RIDERS_LIST: RiderPro[] = [
     category: 'local_kids',
     categoryLabel: 'OC Local Grom',
     sponsor: 'T-Street & Pier Bowl Underground',
-    sponsorLogoUrl: '/assets/milosport/storefront.jpg',
+    sponsorLogoUrl: '/assets/coast/storefront.svg',
     stance: 'Regular',
     hometown: 'San Clemente, CA',
     favoriteTrick: 'Shooting the San Clemente Pier Pilings Backdoor',
