@@ -3,6 +3,8 @@ export default {
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
+    // corepak components ship prebuilt in node_modules; Tailwind skips node_modules unless listed
+    "./node_modules/@funsociety/corepak/dist/pilgrimage/**/*.js",
   ],
   theme: {
     extend: {
