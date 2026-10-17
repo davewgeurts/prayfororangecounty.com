@@ -48,7 +48,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/davewgeurts/corepak.git"
+    "url": "https://github.com/GeurtsGaming/corepak.git"
   },
   "files": [
     "dist",
@@ -57,5 +57,5 @@
   "sideEffects": [
     "*.css"
   ],
-  "yalcSig": "95b12ab24ea575603c968e543e76c888"
+  "yalcSig": "d494d95b7ca8acb961cfc13c719303a6"
 }
