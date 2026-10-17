@@ -1,0 +1,61 @@
+{
+  "name": "@funsociety/corepak",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./daily": {
+      "types": "./dist/daily/index.d.ts",
+      "import": "./dist/daily/index.js"
+    },
+    "./presence": {
+      "types": "./dist/presence/index.d.ts",
+      "import": "./dist/presence/index.js"
+    },
+    "./terminal": {
+      "types": "./dist/terminal/index.d.ts",
+      "import": "./dist/terminal/index.js"
+    },
+    "./pilgrimage": {
+      "types": "./dist/pilgrimage/index.d.ts",
+      "import": "./dist/pilgrimage/index.js"
+    },
+    "./lambda": {
+      "types": "./dist/lambda/index.d.ts",
+      "import": "./dist/lambda/index.js"
+    }
+  },
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "tsc && node scripts/copy-assets.mjs",
+    "dev:watch": "tsc-watch --onSuccess 'node scripts/copy-assets.mjs && yalc push'"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "dependencies": {
+    "canvas-confetti": "^1.9.4",
+    "lucide-react": "^1.55.0"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/davewgeurts/corepak.git"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": [
+    "*.css"
+  ],
+  "yalcSig": "95b12ab24ea575603c968e543e76c888"
+}
