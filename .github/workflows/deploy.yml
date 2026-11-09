@@ -29,15 +29,19 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          VITE_GA_ID: ${{ vars.VITE_GA_ID || 'G-3ZJ8LD67KJ' }}
 
       - name: Deploy to S3
         run: |
-          aws s3 sync ./dist s3://${{ vars.S3_BUCKET || 'prayfororangecounty.com' }} --delete
-          aws s3 cp ./dist/index.html s3://${{ vars.S3_BUCKET || 'prayfororangecounty.com' }}/index.html --cache-control "public, max-age=0, must-revalidate" --content-type "text/html"
-          aws s3 cp ./dist/dashboard/index.html s3://${{ vars.S3_BUCKET || 'prayfororangecounty.com' }}/dashboard/index.html --cache-control "public, max-age=0, must-revalidate" --content-type "text/html"
-          aws s3 cp ./dist/surf/index.html s3://${{ vars.S3_BUCKET || 'prayfororangecounty.com' }}/surf/index.html --cache-control "public, max-age=0, must-revalidate" --content-type "text/html"
-          aws s3 cp ./dist/trestles/index.html s3://${{ vars.S3_BUCKET || 'prayfororangecounty.com' }}/trestles/index.html --cache-control "public, max-age=0, must-revalidate" --content-type "text/html"
-          aws s3 cp ./dist/shrine/index.html s3://${{ vars.S3_BUCKET || 'prayfororangecounty.com' }}/shrine/index.html --cache-control "public, max-age=0, must-revalidate" --content-type "text/html"
+          for BUCKET in ${{ vars.S3_BUCKET || 'prayfororangecounty.com prayfortheocean.com' }}; do
+            aws s3 sync ./dist s3://$BUCKET --delete
+            aws s3 cp ./dist/index.html s3://$BUCKET/index.html --cache-control "public, max-age=0, must-revalidate" --content-type "text/html"
+            aws s3 cp ./dist/dashboard/index.html s3://$BUCKET/dashboard/index.html --cache-control "public, max-age=0, must-revalidate" --content-type "text/html"
+            aws s3 cp ./dist/surf/index.html s3://$BUCKET/surf/index.html --cache-control "public, max-age=0, must-revalidate" --content-type "text/html"
+            aws s3 cp ./dist/trestles/index.html s3://$BUCKET/trestles/index.html --cache-control "public, max-age=0, must-revalidate" --content-type "text/html"
+            aws s3 cp ./dist/shrine/index.html s3://$BUCKET/shrine/index.html --cache-control "public, max-age=0, must-revalidate" --content-type "text/html"
+          done
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
