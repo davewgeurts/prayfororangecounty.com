@@ -1,0 +1,70 @@
+.topics-page {
+	width: 100%;
+	max-width: 600px;
+	margin: 0 auto;
+	padding: 1rem;
+}
+
+.topics-back {
+	background: #1e1e1e;
+	border: 1px solid #444;
+	color: #aaa;
+	font-size: 0.85rem;
+	padding: 0.4rem 1rem;
+	border-radius: 20px;
+	cursor: pointer;
+	transition: all 0.2s;
+	margin-bottom: 1rem;
+}
+
+.topics-back:hover {
+	background: #2a2a2a;
+	border-color: #666;
+	color: #e8e8e8;
+}
+
+.topics-page h2 {
+	color: #e8e8e8;
+	font-size: 1.3rem;
+	margin: 0 0 1rem;
+}
+
+.topics-status {
+	color: #888;
+	font-size: 0.95rem;
+}
+
+.topics-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.topics-table th {
+	text-align: left;
+	color: #888;
+	font-size: 0.8rem;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	padding: 0.5rem 0.75rem;
+	border-bottom: 1px solid #333;
+}
+
+.topics-table td {
+	padding: 0.5rem 0.75rem;
+	border-bottom: 1px solid #1e1e1e;
+	font-size: 0.9rem;
+	color: #ccc;
+}
+
+.topics-table a {
+	color: #7eaad4;
+	text-decoration: none;
+}
+
+.topics-table a:hover {
+	text-decoration: underline;
+}
+
+.topics-table tbody tr:hover {
+	background: #1a1a1a;
+}

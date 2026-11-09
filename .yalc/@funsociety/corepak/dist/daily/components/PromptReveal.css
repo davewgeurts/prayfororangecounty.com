@@ -1,0 +1,54 @@
+.prompt-reveal {
+	width: 100%;
+	text-align: center;
+}
+
+.prompt-toggle {
+	background: none;
+	border: 1px solid #333;
+	color: #888;
+	font-size: 0.8rem;
+	padding: 0.4rem 1rem;
+	border-radius: 20px;
+	cursor: pointer;
+	transition: all 0.2s;
+	font-style: italic;
+}
+
+.prompt-toggle:hover {
+	border-color: #666;
+	color: #bbb;
+	background: #1a1a1a;
+}
+
+.prompt-content {
+	margin-top: 0.75rem;
+	padding: 1rem 1.2rem;
+	background: #1a1a1a;
+	border: 1px solid #333;
+	border-radius: 10px;
+	text-align: left;
+}
+
+.prompt-content p {
+	margin: 0;
+	font-size: 0.85rem;
+	line-height: 1.7;
+	color: #999;
+	font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+}
+
+@media (max-width: 480px) {
+	.prompt-toggle {
+		font-size: 0.75rem;
+		padding: 0.4rem 0.8rem;
+	}
+
+	.prompt-content {
+		padding: 0.75rem 0.9rem;
+	}
+
+	.prompt-content p {
+		font-size: 0.8rem;
+	}
+}

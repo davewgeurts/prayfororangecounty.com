@@ -1,0 +1,30 @@
+.countdown {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+}
+
+.countdown-label {
+	font-size: 0.8rem;
+	color: #666;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.countdown-time {
+	font-size: 0.9rem;
+	font-weight: 700;
+	color: #ca9278;
+	font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+	letter-spacing: 0.1em;
+}
+
+@media (max-width: 480px) {
+	.countdown-label {
+		font-size: 0.7rem;
+	}
+
+	.countdown-time {
+		font-size: 0.85rem;
+	}
+}

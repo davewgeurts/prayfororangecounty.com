@@ -1,0 +1,149 @@
+.calendar-wrapper {
+	position: relative;
+}
+
+.calendar-toggle {
+	background: none;
+	border: 1px solid #444;
+	color: #ccc;
+	font-size: 1.2rem;
+	padding: 0.3rem 0.6rem;
+	border-radius: 6px;
+	cursor: pointer;
+	transition: all 0.2s;
+	line-height: 1;
+}
+
+.calendar-toggle:hover {
+	border-color: #888;
+	background: #333;
+}
+
+.calendar-popup {
+	position: absolute;
+	top: calc(100% + 8px);
+	left: 50%;
+	transform: translateX(-50%);
+	background: #1e1e1e;
+	border: 1px solid #444;
+	border-radius: 10px;
+	padding: 1rem;
+	z-index: 100;
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+	min-width: 280px;
+}
+
+.calendar-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 0.75rem;
+}
+
+.calendar-month-label {
+	font-size: 0.95rem;
+	font-weight: 600;
+	color: #e8e8e8;
+}
+
+.calendar-nav {
+	background: none;
+	border: 1px solid #444;
+	color: #ccc;
+	font-size: 1.3rem;
+	width: 32px;
+	height: 32px;
+	border-radius: 6px;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.2s;
+	padding: 0;
+	line-height: 1;
+}
+
+.calendar-nav:hover:not(:disabled) {
+	border-color: #888;
+	background: #333;
+	color: #fff;
+}
+
+.calendar-nav:disabled {
+	opacity: 0.25;
+	cursor: default;
+}
+
+.calendar-grid {
+	display: grid;
+	grid-template-columns: repeat(7, 1fr);
+	gap: 2px;
+}
+
+.calendar-weekday {
+	text-align: center;
+	font-size: 0.7rem;
+	font-weight: 600;
+	color: #666;
+	text-transform: uppercase;
+	padding: 0.3rem 0;
+}
+
+.calendar-day {
+	text-align: center;
+	padding: 0.4rem 0;
+	font-size: 0.85rem;
+	border-radius: 6px;
+	border: none;
+	background: none;
+	color: #555;
+	cursor: default;
+	transition: all 0.15s;
+}
+
+.calendar-day.empty {
+	pointer-events: none;
+}
+
+.calendar-day.available {
+	color: #ccc;
+	cursor: pointer;
+}
+
+.calendar-day.available:hover {
+	background: #333;
+	color: #fff;
+}
+
+.calendar-day.current {
+	background: #7c6fdb;
+	color: #fff;
+	font-weight: 700;
+}
+
+.calendar-day.current:hover {
+	background: #8d82e0;
+}
+
+@media (max-width: 480px) {
+	.calendar-popup {
+		min-width: 260px;
+		padding: 0.75rem;
+		left: auto;
+		right: 0;
+		transform: none;
+	}
+
+	.calendar-toggle {
+		min-width: 44px;
+		min-height: 44px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.calendar-day {
+		padding: 0.5rem 0;
+		font-size: 0.8rem;
+	}
+}

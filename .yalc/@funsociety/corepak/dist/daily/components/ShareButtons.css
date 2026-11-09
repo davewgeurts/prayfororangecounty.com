@@ -1,0 +1,78 @@
+.share-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 42px;
+	height: 42px;
+	border-radius: 50%;
+	border: 1px solid #333;
+	background: #1a1a1a;
+	cursor: pointer;
+	transition: all 0.2s;
+	padding: 0;
+}
+
+.share-btn:hover {
+	transform: scale(1.1);
+}
+
+.share-icon {
+	font-size: 1rem;
+	line-height: 1;
+}
+
+.share-btn.twitter {
+	color: #fff;
+}
+
+.share-btn.twitter:hover {
+	background: #000;
+	border-color: #555;
+}
+
+.share-btn.facebook {
+	color: #1877f2;
+}
+
+.share-btn.facebook:hover {
+	background: #1877f2;
+	border-color: #1877f2;
+	color: #fff;
+}
+
+.share-btn.reddit {
+	color: #ff4500;
+}
+
+.share-btn.reddit:hover {
+	background: #ff4500;
+	border-color: #ff4500;
+	color: #fff;
+}
+
+.share-btn.email {
+	color: #aaa;
+}
+
+.share-btn.email:hover {
+	background: #444;
+	border-color: #666;
+	color: #fff;
+}
+
+.share-btn.copy {
+	color: #aaa;
+}
+
+.share-btn.copy:hover {
+	background: #444;
+	border-color: #666;
+	color: #fff;
+}
+
+@media (max-width: 480px) {
+	.share-btn {
+		width: 44px;
+		height: 44px;
+	}
+}

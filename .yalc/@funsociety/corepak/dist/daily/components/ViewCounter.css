@@ -1,0 +1,58 @@
+.view-counter {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	font-size: 0.8rem;
+	color: #666;
+	padding: 0.5rem 0;
+}
+
+.view-counter-day {
+	color: #888;
+}
+
+.view-counter-dot {
+	color: #444;
+}
+
+.view-counter-active {
+	color: #ca9278;
+}
+
+.view-counter-total {
+	color: #555;
+}
+
+.view-counter-debug {
+	background: none;
+	border: 1px dashed #555;
+	color: #f0c040;
+	font-size: 0.7rem;
+	padding: 0.15rem 0.5rem;
+	border-radius: 4px;
+	cursor: pointer;
+	margin-left: 0.25rem;
+}
+
+.view-counter-debug:hover {
+	background: #252218;
+	border-color: #f0c040;
+}
+
+.view-counter-debug-danger {
+	color: #e55;
+	border-color: #533;
+}
+
+.view-counter-debug-danger:hover {
+	background: #2a1515;
+	border-color: #e55;
+}
+
+@media (max-width: 480px) {
+	.view-counter {
+		font-size: 0.75rem;
+		gap: 0.4rem;
+	}
+}
